@@ -3,5 +3,11 @@
   "compatibility_date": "2026-09-18",
   "assets": {
     "directory": "."
-  }
+  },
+  "routes": [
+    {
+      "pattern": "ctf.111iridescence.org",
+      "custom_domain": true
+    }
+  ]
 }
