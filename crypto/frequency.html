@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Frequency Analysis (Crypto) - CTF Tools</title><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="../style.css"></head>
+<body><nav><a href="../index.html">&larr; Back to Tools</a></nav><h1>Frequency Analysis (Crypto)</h1><p class="note">Character frequency and English comparison</p>
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    <div class="toolbar"><button id="btn-process" class="primary">Process</button><button id="btn-clear">Clear</button></div>
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    <div class="toolbar"><button id="btn-copy">Copy</button><button id="btn-swap">Output &rarr; Input</button></div>
+  </div>
+</div>
+<script src="../js/common.js"></script><script>trackUsage('frequency');
+
+  $('#btn-process').onclick = () => {
+    let text = $('#input').value.toUpperCase().replace(/[^A-Z]/g, '');
+    let freqs = new Array(26).fill(0);
+    for(let i=0; i<text.length; i++) freqs[text.charCodeAt(i) - 65]++;
+    
+    let res = `Total Letters: ${text.length}\n\nLetter | Count | Freq % | English %\n-------|-------|--------|----------\n`;
+    const eng = [8.17,1.49,2.78,4.25,12.7,2.23,2.02,6.09,6.97,0.15,0.77,4.03,2.41,6.75,7.51,1.93,0.10,5.99,6.33,9.06,2.76,0.98,2.36,0.15,1.97,0.07];
+    
+    let combined = [];
+    for(let i=0; i<26; i++) combined.push({ c: String.fromCharCode(i+65), cnt: freqs[i], f: (freqs[i]/text.length*100)||0, e: eng[i] });
+    combined.sort((a,b) => b.f - a.f);
+    
+    combined.forEach(x => {
+      res += `${x.c.padEnd(6)} | ${x.cnt.toString().padEnd(5)} | ${x.f.toFixed(2).padEnd(6)} | ${x.e.toFixed(2)}\n`;
+    });
+    $('#output').value = res;
+  };
+  $('#btn-clear').onclick = () => $('#input').value = $('#output').value = '';
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => $('#output').value);
+</script></body></html>

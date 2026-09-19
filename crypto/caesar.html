@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Caesar Cipher - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Caesar Cipher</h1>
+<p class="note">Encrypt/decrypt and brute-force all 26 rotations</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('caesar');
+  
+
+  const input = $('#input');
+  const output = $('#output');
+  
+  const tb = $$('.toolbar')[0];
+  tb.innerHTML = '<input type="number" id="shift" value="3" style="width:80px"> ';
+  const encBtn = makeEl('button', {class: 'primary'}, 'Shift');
+  const bruteBtn = makeEl('button', {}, 'Show All 26');
+  tb.appendChild(encBtn); tb.appendChild(bruteBtn);
+  
+  function shift(str, amount) {
+    amount = (amount % 26 + 26) % 26;
+    return str.replace(/[a-zA-Z]/g, c => {
+      const b = c <= 'Z' ? 65 : 97;
+      return String.fromCharCode(((c.charCodeAt(0) - b + amount) % 26) + b);
+    });
+  }
+  
+  encBtn.onclick = () => output.value = shift(input.value, parseInt($('#shift').value) || 0);
+  bruteBtn.onclick = () => {
+    let res = '';
+    for(let i=0; i<26; i++) res += `ROT${i}:\n${shift(input.value, i)}\n\n`;
+    output.value = res;
+  };
+  $('#btn-swap').onclick = () => { if(output.value) { input.value = output.value; output.value = ''; } };
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

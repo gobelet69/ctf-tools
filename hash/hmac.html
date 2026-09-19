@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>HMAC Calculator - CTF Tools</title><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="../style.css"></head>
+<body><nav><a href="../index.html">&larr; Back to Tools</a></nav><h1>HMAC Calculator</h1><p class="note">Compute HMAC</p>
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label>Message</label>
+    <textarea id="msg" rows="4"></textarea>
+    <label style="margin-top:1rem">Secret Key</label>
+    <input type="text" id="key" style="margin-bottom:1rem">
+    <label>Algorithm</label>
+    <select id="alg"><option value="SHA-1">HMAC-SHA1</option><option value="SHA-256" selected>HMAC-SHA256</option><option value="SHA-512">HMAC-SHA512</option></select>
+    <div class="toolbar" style="margin-top:1rem"><button id="btn-process" class="primary">Calculate</button></div>
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label>HMAC (Hex)</label>
+    <textarea id="output" rows="11" readonly></textarea>
+    <div class="toolbar"><button id="btn-copy">Copy</button></div>
+  </div>
+</div>
+
+<script src="../js/common.js"></script><script>trackUsage('hmac');
+
+  $('#btn-process').onclick = async () => {
+    $('#error').textContent = '';
+    try {
+      const keyData = textToBytes($('#key').value);
+      const msgData = textToBytes($('#msg').value);
+      const alg = $('#alg').value;
+      const key = await crypto.subtle.importKey('raw', keyData, {name: 'HMAC', hash: alg}, false, ['sign']);
+      const sig = await crypto.subtle.sign('HMAC', key, msgData);
+      $('#output').value = bytesToHex(new Uint8Array(sig));
+    } catch(e) { $('#error').textContent = 'Error computing HMAC'; }
+  };
+  addCopyButton($('#btn-copy'), () => $('#output').value);
+</script></body></html>

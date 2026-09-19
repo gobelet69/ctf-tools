@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>IEEE-754 Inspector - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>IEEE-754 Inspector</h1>
+<p class="note">Encode and decode floats</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label>Float (32-bit or 64-bit Decimal)</label>
+    <input type="text" id="dec" placeholder="e.g. 13.37" style="margin-bottom:1rem">
+    
+    <label>Hex Representation</label>
+    <input type="text" id="hex" placeholder="e.g. 4155EB85" style="margin-bottom:1rem">
+    
+    <label>Format</label>
+    <select id="fmt"><option value="32">32-bit (Single)</option><option value="64">64-bit (Double)</option></select>
+    
+    <div class="toolbar" style="margin-top:1rem">
+      <button id="btn-dec-hex" class="primary">Dec &rarr; Hex</button>
+      <button id="btn-hex-dec" class="primary">Hex &rarr; Dec</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label>Binary Breakdown</label>
+    <textarea id="output" rows="6" readonly style="font-family:var(--mono)"></textarea>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('ieee754');
+  
+
+  $('#btn-dec-hex').onclick = () => {
+    $('#error').textContent = '';
+    try {
+      const v = parseFloat($('#dec').value);
+      if(isNaN(v)) throw new Error('Invalid decimal');
+      const is64 = $('#fmt').value === '64';
+      
+      const buffer = new ArrayBuffer(is64 ? 8 : 4);
+      const view = new DataView(buffer);
+      if(is64) view.setFloat64(0, v, false); // Big endian for hex string ease
+      else view.setFloat32(0, v, false);
+      
+      let hex = '';
+      for(let i=0; i<buffer.byteLength; i++) hex += view.getUint8(i).toString(16).padStart(2,'0').toUpperCase();
+      $('#hex').value = hex;
+      
+      const bin = Array.from(new Uint8Array(buffer)).map(b=>b.toString(2).padStart(8,'0')).join('');
+      if(is64) {
+        $('#output').value = `Sign:     ${bin[0]}\nExponent: ${bin.substring(1, 12)}\nMantissa: ${bin.substring(12)}`;
+      } else {
+        $('#output').value = `Sign:     ${bin[0]}\nExponent: ${bin.substring(1, 9)}\nMantissa: ${bin.substring(9)}`;
+      }
+    } catch(e) { $('#error').textContent = e.message; }
+  };
+  
+  $('#btn-hex-dec').onclick = () => {
+    $('#error').textContent = '';
+    try {
+      let hex = $('#hex').value.replace(/[^0-9a-fA-F]/g, '');
+      const is64 = $('#fmt').value === '64';
+      if((is64 && hex.length !== 16) || (!is64 && hex.length !== 8)) throw new Error('Invalid hex length for format');
+      
+      const buffer = new ArrayBuffer(is64 ? 8 : 4);
+      const view = new DataView(buffer);
+      for(let i=0; i<hex.length; i+=2) view.setUint8(i/2, parseInt(hex.substring(i, i+2), 16));
+      
+      $('#dec').value = is64 ? view.getFloat64(0, false) : view.getFloat32(0, false);
+      
+      const bin = Array.from(new Uint8Array(buffer)).map(b=>b.toString(2).padStart(8,'0')).join('');
+      if(is64) {
+        $('#output').value = `Sign:     ${bin[0]}\nExponent: ${bin.substring(1, 12)}\nMantissa: ${bin.substring(12)}`;
+      } else {
+        $('#output').value = `Sign:     ${bin[0]}\nExponent: ${bin.substring(1, 9)}\nMantissa: ${bin.substring(9)}`;
+      }
+    } catch(e) { $('#error').textContent = e.message; }
+  };
+
+</script>
+</body>
+</html>

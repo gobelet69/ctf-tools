@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>XML Formatter - CTF Tools</title><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="../style.css"></head>
+<body><nav><a href="../index.html">&larr; Back to Tools</a></nav><h1>XML Formatter</h1><p class="note">Format XML and inspect entities</p>
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    <div class="toolbar"><button id="btn-process" class="primary">Process</button><button id="btn-clear">Clear</button></div>
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    <div class="toolbar"><button id="btn-copy">Copy</button><button id="btn-swap">Output &rarr; Input</button></div>
+  </div>
+</div>
+<script src="../js/common.js"></script><script>trackUsage('xml-formatter');
+
+  const tb = $$('.toolbar')[0];
+  tb.innerHTML = '<button id="btn-fmt" class="primary">Format</button> <button id="btn-clear">Clear</button>';
+  $('#btn-fmt').onclick = () => {
+    $('#error').textContent = '';
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString($('#input').value, 'application/xml');
+      if(doc.querySelector('parsererror')) throw new Error('XML parsing error');
+      
+      // Simple serializer with basic indentation
+      const serializer = new XMLSerializer();
+      let xml = serializer.serializeToString(doc);
+      // extremely basic format via regex since DOM serializer crushes it
+      let formatted = '', pad = 0;
+      xml.split(/(<[^>]+>)/g).forEach(node => {
+        if(!node.trim()) return;
+        if(node.match(/^<\/\w/)) pad -= 2;
+        formatted += ' '.repeat(Math.max(0, pad)) + node + '\n';
+        if(node.match(/^<\w[^>]*[^\/]>$/)) pad += 2;
+      });
+      $('#output').value = formatted;
+    } catch(e) { $('#error').textContent = e.message; }
+  };
+  $('#btn-clear').onclick = () => $('#input').value = $('#output').value = '';
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => $('#output').value);
+</script></body></html>

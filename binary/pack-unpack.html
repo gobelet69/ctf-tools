@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Pack / Unpack - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Pack / Unpack</h1>
+<p class="note">Integer packing</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label>Integer (Hex or Dec)</label>
+    <input type="text" id="val" placeholder="0x41424344 or 1094861636" style="margin-bottom:1rem">
+    <label>Size</label>
+    <select id="size" style="margin-bottom:1rem"><option value="8">8-bit</option><option value="16">16-bit</option><option value="32" selected>32-bit</option><option value="64">64-bit</option></select>
+    <label>Endian</label>
+    <select id="endian"><option value="le">Little Endian</option><option value="be">Big Endian</option></select>
+    <div class="toolbar" style="margin-top:1rem"><button id="btn-process" class="primary">Pack</button></div>
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label>Packed Bytes (Hex)</label>
+    <textarea id="output" rows="6" readonly></textarea>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('pack-unpack');
+  
+
+  $('#btn-process').onclick = () => {
+    $('#error').textContent = '';
+    try {
+      let v = $('#val').value.trim();
+      let bi = v.startsWith('0x') ? BigInt(v) : BigInt(v);
+      const bits = parseInt($('#size').value);
+      const le = $('#endian').value === 'le';
+      
+      let hex = bi.toString(16).padStart(bits/4, '0');
+      if(hex.length > bits/4) hex = hex.slice(hex.length - bits/4);
+      
+      let res = '';
+      if(le) {
+        for(let i=hex.length-2; i>=0; i-=2) res += hex.substr(i, 2) + ' ';
+      } else {
+        for(let i=0; i<hex.length; i+=2) res += hex.substr(i, 2) + ' ';
+      }
+      $('#output').value = res.trim();
+    } catch(e) { $('#error').textContent = 'Invalid input'; }
+  };
+
+</script>
+</body>
+</html>

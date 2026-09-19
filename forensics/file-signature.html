@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>File Signature Database - CTF Tools</title><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="../style.css"></head>
+<body><nav><a href="../index.html">&larr; Back to Tools</a></nav><h1>File Signature Database</h1><p class="note">Look up file signatures</p>
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    <div class="toolbar"><button id="btn-process" class="primary">Process</button><button id="btn-clear">Clear</button></div>
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    <div class="toolbar"><button id="btn-copy">Copy</button><button id="btn-swap">Output &rarr; Input</button></div>
+  </div>
+</div>
+<script src="../js/common.js"></script><script>trackUsage('file-signature-db');
+
+  const input = $('#input');
+  input.placeholder = "Enter hex signature or extension";
+  const output = $('#output');
+  const db = [
+    {ext:'PNG', hex:'89 50 4E 47 0D 0A 1A 0A', mime:'image/png'},
+    {ext:'JPEG', hex:'FF D8 FF E0', mime:'image/jpeg'},
+    {ext:'GIF', hex:'47 49 46 38', mime:'image/gif'},
+    {ext:'PDF', hex:'25 50 44 46', mime:'application/pdf'},
+    {ext:'ZIP', hex:'50 4B 03 04', mime:'application/zip'},
+    {ext:'RAR', hex:'52 61 72 21 1A 07', mime:'application/x-rar-compressed'},
+    {ext:'ELF', hex:'7F 45 4C 46', mime:'application/x-executable'},
+    {ext:'MZ (PE)', hex:'4D 5A', mime:'application/x-dosexec'},
+    {ext:'GZIP', hex:'1F 8B 08', mime:'application/gzip'},
+    {ext:'XZ', hex:'FD 37 7A 58 5A 00', mime:'application/x-xz'}
+  ];
+  $('#btn-process').onclick = () => {
+    let q = input.value.trim().toUpperCase().replace(/\s+/g, '');
+    let res = '';
+    db.forEach(r => {
+      if(r.ext.toUpperCase().includes(q) || r.hex.replace(/\s+/g,'').startsWith(q) || q.startsWith(r.hex.replace(/\s+/g,''))) {
+        res += `Extension: ${r.ext}\nSignature: ${r.hex}\nMIME Type: ${r.mime}\n\n`;
+      }
+    });
+    output.value = res || 'No matches found in lightweight local DB.';
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = ''; };
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => output.value);
+</script></body></html>

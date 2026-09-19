@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ASCII Converter - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>ASCII Converter</h1>
+<p class="note">Convert ASCII to/from hex, binary, decimal</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('ascii');
+  
+
+  const input = $('#input');
+  const output = $('#output');
+  const err = $('#error');
+  
+  const tb = $$('.toolbar')[0];
+  tb.innerHTML = '';
+  const toHex = makeEl('button', {class: 'primary'}, 'Text to Hex');
+  const toBin = makeEl('button', {class: 'primary'}, 'Text to Bin');
+  const toDec = makeEl('button', {class: 'primary'}, 'Text to Dec');
+  const clrBtn = makeEl('button', {}, 'Clear');
+  tb.appendChild(toHex); tb.appendChild(toBin); tb.appendChild(toDec); tb.appendChild(clrBtn);
+  
+  toHex.onclick = () => {
+    output.value = Array.from(input.value).map(c => c.charCodeAt(0).toString(16).padStart(2,'0')).join(' ');
+  };
+  toBin.onclick = () => {
+    output.value = Array.from(input.value).map(c => c.charCodeAt(0).toString(2).padStart(8,'0')).join(' ');
+  };
+  toDec.onclick = () => {
+    output.value = Array.from(input.value).map(c => c.charCodeAt(0).toString(10)).join(' ');
+  };
+  
+  clrBtn.onclick = () => { input.value = output.value = err.textContent = ''; input.focus(); };
+  $('#btn-swap').onclick = () => { if(output.value) { input.value = output.value; output.value = err.textContent = ''; } };
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

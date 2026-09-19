@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Integer ↔ Bytes - CTF Tools</title><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="../style.css"></head>
+<body><nav><a href="../index.html">&larr; Back to Tools</a></nav><h1>Integer ↔ Bytes</h1><p class="note">Convert integer to byte representation</p>
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    <div class="toolbar"><button id="btn-process" class="primary">Process</button><button id="btn-clear">Clear</button></div>
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    <div class="toolbar"><button id="btn-copy">Copy</button><button id="btn-swap">Output &rarr; Input</button></div>
+  </div>
+</div>
+<script src="../js/common.js"></script><script>trackUsage('int-bytes');
+
+  $('#btn-process').onclick = () => {
+    $('#error').textContent = '';
+    try {
+      let v = $('#input').value.trim();
+      let bi = v.startsWith('0x') ? BigInt(v) : BigInt(v);
+      let hex = bi.toString(16);
+      if(hex.length % 2 !== 0) hex = '0' + hex;
+      
+      let le = '';
+      for(let i=hex.length-2; i>=0; i-=2) le += hex.substr(i, 2) + ' ';
+      
+      let be = '';
+      for(let i=0; i<hex.length; i+=2) be += hex.substr(i, 2) + ' ';
+      
+      $('#output').value = `Big Endian:\n${be.trim().toUpperCase()}\n\nLittle Endian:\n${le.trim().toUpperCase()}`;
+    } catch(e) { $('#error').textContent = 'Invalid integer'; }
+  };
+  $('#btn-clear').onclick = () => $('#input').value = $('#output').value = '';
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => $('#output').value);
+</script></body></html>

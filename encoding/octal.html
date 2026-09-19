@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Octal Converter - CTF Tools</title><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="../style.css"></head>
+<body><nav><a href="../index.html">&larr; Back to Tools</a></nav><h1>Octal Converter</h1><p class="note">Convert octal</p>
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    <div class="toolbar"><button id="btn-process" class="primary">Process</button><button id="btn-clear">Clear</button></div>
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    <div class="toolbar"><button id="btn-copy">Copy</button><button id="btn-swap">Output &rarr; Input</button></div>
+  </div>
+</div>
+<script src="../js/common.js"></script><script>trackUsage('octal');
+
+  const tb = $$('.toolbar')[0];
+  tb.innerHTML = '<button id="btn-enc" class="primary">Text &rarr; Octal</button> <button id="btn-dec" class="primary">Octal &rarr; Text</button> <button id="btn-clear">Clear</button>';
+  $('#btn-enc').onclick = () => {
+    $('#output').value = Array.from(new TextEncoder().encode($('#input').value)).map(b => b.toString(8).padStart(3, '0')).join(' ');
+  };
+  $('#btn-dec').onclick = () => {
+    try {
+      const parts = $('#input').value.trim().split(/\s+/);
+      const b = new Uint8Array(parts.map(p => parseInt(p, 8)));
+      $('#output').value = new TextDecoder().decode(b);
+      $('#error').textContent = '';
+    } catch(e) { $('#error').textContent = 'Invalid octal'; }
+  };
+  $('#btn-clear').onclick = () => $('#input').value = $('#output').value = '';
+  $('#btn-swap').onclick = () => { if($('#output').value) { $('#input').value = $('#output').value; $('#output').value = ''; } };
+  addCopyButton($('#btn-copy'), () => $('#output').value);
+</script></body></html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>CSP Parser - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>CSP Parser</h1>
+<p class="note">Parse Content-Security-Policy headers</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('csp-parser');
+  
+
+  const input = $('#input');
+  const output = $('#output');
+  $('#btn-process').onclick = () => {
+    let v = input.value.replace(/^Content-Security-Policy:\s*/i, '');
+    const dirs = v.split(';').map(d => d.trim()).filter(Boolean);
+    let res = '';
+    dirs.forEach(d => {
+      const parts = d.split(/\s+/);
+      res += `[ ${parts[0]} ]\n`;
+      for(let i=1; i<parts.length; i++) res += `  ${parts[i]}\n`;
+      res += '\n';
+    });
+    output.value = res || 'No directives found';
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = ''; };
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

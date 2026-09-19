@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>IP Converter - CTF Tools</title><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="../style.css"></head>
+<body><nav><a href="../index.html">&larr; Back to Tools</a></nav><h1>IP Converter</h1><p class="note">Convert IPv4</p>
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    <div class="toolbar"><button id="btn-process" class="primary">Process</button><button id="btn-clear">Clear</button></div>
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    <div class="toolbar"><button id="btn-copy">Copy</button><button id="btn-swap">Output &rarr; Input</button></div>
+  </div>
+</div>
+<script src="../js/common.js"></script><script>trackUsage('ip-converter');
+
+  $('#btn-process').onclick = () => {
+    try {
+      const v = $('#input').value.trim();
+      let num = 0 >>> 0;
+      if(v.includes('.')) {
+        const p = v.split('.').map(Number);
+        num = ((p[0]<<24) | (p[1]<<16) | (p[2]<<8) | p[3]) >>> 0;
+      } else {
+        num = parseInt(v) >>> 0;
+      }
+      const ip = `${(num>>>24)&255}.${(num>>>16)&255}.${(num>>>8)&255}.${num&255}`;
+      const hex = '0x' + num.toString(16).padStart(8,'0').toUpperCase();
+      const bin = num.toString(2).padStart(32,'0');
+      $('#output').value = `IP:      ${ip}\nDecimal: ${num}\nHex:     ${hex}\nBinary:  ${bin}`;
+      $('#error').textContent = '';
+    } catch(e) { $('#error').textContent = 'Invalid IP format'; }
+  };
+  $('#btn-clear').onclick = () => $('#input').value = $('#output').value = '';
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => $('#output').value);
+</script></body></html>

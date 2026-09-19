@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Text Diff - CTF Tools</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav><a href="../index.html">&larr; Back to Tools</a></nav>
+<h1>Text Diff</h1>
+<p class="note">Compare texts line by line</p>
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label>Text 1</label>
+    <textarea id="in1" rows="8"></textarea>
+  </div>
+  <div>
+    <label>Text 2</label>
+    <textarea id="in2" rows="8"></textarea>
+  </div>
+</div>
+<div class="toolbar"><button id="btn-process" class="primary">Compare</button></div>
+<div>
+  <label>Differences</label>
+  <div id="output" class="output" style="min-height:100px; font-family:var(--mono); white-space:pre-wrap"></div>
+</div>
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('diff-tool');
+  $('#btn-process').onclick = () => {
+    const l1 = $('#in1').value.split('\n');
+    const l2 = $('#in2').value.split('\n');
+    const max = Math.max(l1.length, l2.length);
+    const out = $('#output');
+    out.textContent = ''; // clear safely
+    for(let i=0; i<max; i++) {
+      const a = l1[i] || ''; const b = l2[i] || '';
+      if(a === b) {
+        const div = document.createElement('div');
+        div.textContent = '  ' + a;
+        out.appendChild(div);
+      } else {
+        if(a) {
+          const div1 = document.createElement('div');
+          div1.style.color = 'var(--red)';
+          div1.textContent = '- ' + a;
+          out.appendChild(div1);
+        }
+        if(b) {
+          const div2 = document.createElement('div');
+          div2.style.color = 'var(--accent2)';
+          div2.textContent = '+ ' + b;
+          out.appendChild(div2);
+        }
+      }
+    }
+  };
+</script>
+</body></html>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Compare Hashes - CTF Tools</title><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="../style.css"></head>
+<body><nav><a href="../index.html">&larr; Back to Tools</a></nav><h1>Compare Hashes</h1><p class="note">Compare two hash strings safely</p>
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label>Hash 1</label>
+    <textarea id="h1" rows="3"></textarea>
+  </div>
+  <div>
+    <label>Hash 2</label>
+    <textarea id="h2" rows="3"></textarea>
+  </div>
+</div>
+<div class="toolbar"><button id="btn-process" class="primary">Compare</button></div>
+<div id="output" class="output" style="text-align:center; font-size:1.5rem; margin-top:1rem; padding:2rem"></div>
+
+<script src="../js/common.js"></script><script>trackUsage('hash-compare');
+
+  $('#btn-process').onclick = () => {
+    const h1 = $('#h1').value.trim().toLowerCase();
+    const h2 = $('#h2').value.trim().toLowerCase();
+    if(h1 === h2 && h1 !== '') {
+      $('#output').textContent = 'MATCH';
+      $('#output').style.color = 'var(--accent2)';
+    } else {
+      $('#output').textContent = 'NO MATCH';
+      $('#output').style.color = 'var(--red)';
+    }
+  };
+</script></body></html>

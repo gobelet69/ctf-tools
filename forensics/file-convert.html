@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>File ↔ Base64 / Hex - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>File ↔ Base64 / Hex</h1>
+<p class="note">Convert files to/from encodings</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label>Select File</label>
+    <input type="file" id="file" style="margin-bottom:1rem">
+    
+    <label>Or Paste Data (Base64/Hex)</label>
+    <textarea id="input" rows="6"></textarea>
+    
+    <div class="toolbar" style="margin-top:1rem">
+      <button id="btn-file-b64" class="primary">File &rarr; Base64</button>
+      <button id="btn-file-hex" class="primary">File &rarr; Hex</button>
+    </div>
+    <div class="toolbar">
+      <button id="btn-b64-file" class="primary">Base64 &rarr; File</button>
+      <button id="btn-hex-file" class="primary">Hex &rarr; File</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label>Output (Text)</label>
+    <textarea id="output" rows="16" readonly></textarea>
+    <div class="toolbar"><button id="btn-copy">Copy Output</button></div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('file-convert');
+  
+
+  const fileIn = $('#file');
+  const input = $('#input');
+  const output = $('#output');
+  const err = $('#error');
+  
+  $('#btn-file-b64').onclick = async () => {
+    err.textContent = '';
+    if(!fileIn.files[0]) return;
+    try {
+      const b = await readFile(fileIn.files[0]);
+      output.value = base64Encode(b);
+    } catch(e) { err.textContent = e.message; }
+  };
+  
+  $('#btn-file-hex').onclick = async () => {
+    err.textContent = '';
+    if(!fileIn.files[0]) return;
+    try {
+      const b = await readFile(fileIn.files[0]);
+      output.value = bytesToHex(b);
+    } catch(e) { err.textContent = e.message; }
+  };
+  
+  $('#btn-b64-file').onclick = () => {
+    err.textContent = '';
+    if(!input.value) return;
+    try {
+      const b = base64Decode(input.value);
+      download('ctf_tools_decoded.bin', b);
+    } catch(e) { err.textContent = e.message; }
+  };
+  
+  $('#btn-hex-file').onclick = () => {
+    err.textContent = '';
+    if(!input.value) return;
+    try {
+      const b = hexToBytes(input.value);
+      download('ctf_tools_decoded.bin', b);
+    } catch(e) { err.textContent = e.message; }
+  };
+  
+  $('#btn-clear').onclick = () => { input.value = output.value = err.textContent = ''; fileIn.value = ''; };
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

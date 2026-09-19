@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Number Base Converter - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Number Base Converter</h1>
+<p class="note">Convert between decimal, hex, binary, octal</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('number-converter');
+  
+
+  const input = $('#input');
+  const output = $('#output');
+  const err = $('#error');
+  
+  const tb = $$('.toolbar')[0];
+  tb.innerHTML = '<select id="from" style="width:auto"><option value="10">Dec</option><option value="16">Hex</option><option value="2">Bin</option><option value="8">Oct</option></select> ' +
+                 '<select id="to" style="width:auto"><option value="16">Hex</option><option value="10">Dec</option><option value="2">Bin</option><option value="8">Oct</option></select> ';
+  const convertBtn = makeEl('button', {class: 'primary'}, 'Convert');
+  tb.appendChild(convertBtn);
+  
+  convertBtn.onclick = () => {
+    err.textContent = '';
+    const from = parseInt($('#from').value);
+    const to = parseInt($('#to').value);
+    
+    let parts = input.value.trim().split(/\s+/);
+    try {
+      output.value = parts.map(p => {
+        if(!p) return '';
+        // Use BigInt for precision
+        let bi;
+        if(from === 16 && p.startsWith('0x')) p = p.substring(2);
+        if(from === 2 && p.startsWith('0b')) p = p.substring(2);
+        if(from === 8 && p.startsWith('0o')) p = p.substring(2);
+        
+        if (from === 16) bi = BigInt('0x' + p);
+        else if (from === 2) bi = BigInt('0b' + p);
+        else if (from === 8) bi = BigInt('0o' + p);
+        else bi = BigInt(p);
+        
+        return bi.toString(to);
+      }).join(' ');
+    } catch(e) { err.textContent = 'Invalid number format'; }
+  };
+  $('#btn-swap').onclick = () => { if(output.value) { input.value = output.value; output.value = err.textContent = ''; } };
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

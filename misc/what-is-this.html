@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>What Is This? - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>What Is This?</h1>
+<p class="note">Heuristic identification of encoded data</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('what-is-this');
+  
+
+  const input = $('#input');
+  const output = $('#output');
+  
+  $('#btn-process').onclick = () => {
+    const v = input.value.trim();
+    if(!v) return output.value = '';
+    let results = [];
+    
+    // Hex
+    if(/^[0-9a-fA-F\s]+$/.test(v) && v.length >= 2) {
+      let l = v.replace(/\s/g, '').length;
+      if(l%2===0) {
+        if(l===32) results.push({t:'MD5 / NTLM Hash', c:'High', r:'32 hex characters', d:'Hash Identifier'});
+        else if(l===40) results.push({t:'SHA-1 Hash', c:'High', r:'40 hex characters', d:'Hash Identifier'});
+        else if(l===64) results.push({t:'SHA-256 Hash', c:'High', r:'64 hex characters', d:'Hash Identifier'});
+        else results.push({t:'Hexadecimal bytes', c:'High', r:'Contains only hex digits, even length', d:'Hex Decode'});
+      }
+    }
+    
+    // Base64
+    if(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(v) && v.length >= 4) {
+      if(!/^[0-9a-fA-F\s]+$/.test(v)) { // don't flag pure hex as b64 usually
+        results.push({t:'Base64', c:'High', r:'Matches standard Base64 regex/padding', d:'Base64 Decode'});
+      }
+    }
+    
+    // JWT
+    if(/^eyJ[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*$/.test(v)) {
+      results.push({t:'JSON Web Token (JWT)', c:'High', r:'Starts with eyJ (Base64 {"), 2 or 3 dot-separated parts', d:'JWT Decoder'});
+    }
+    
+    // URL
+    if(/%[0-9a-fA-F]{2}/.test(v)) {
+      results.push({t:'URL Encoded', c:'High', r:'Contains percent-encoded sequences', d:'URL Decode'});
+    }
+    
+    // Binary
+    if(/^[01\s]+$/.test(v) && v.length > 7) {
+      results.push({t:'Binary String', c:'High', r:'Only 0s and 1s', d:'ASCII Converter'});
+    }
+    
+    // Unix TS
+    if(/^\d{10}$/.test(v) || /^\d{13}$/.test(v)) {
+      results.push({t:'Unix Timestamp', c:'Medium', r:'10 or 13 digits', d:'Timestamp Converter'});
+    }
+    
+    // HTML Entity
+    if(/&[a-zA-Z]+;|&#[0-9]+;/.test(v)) {
+      results.push({t:'HTML Entity', c:'High', r:'Contains &xxx; pattern', d:'HTML Entities'});
+    }
+    
+    if(results.length === 0) results.push({t:'Unknown text', c:'Low', r:'No specific patterns matched', d:'Try frequency analysis or ROT-N'});
+    
+    output.value = results.map(r => `Type: ${r.t}\nConfidence: ${r.c}\nReason: ${r.r}\nSuggest: ${r.d}\n`).join('\n');
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = ''; input.focus(); };
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

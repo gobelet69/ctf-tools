@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Port Reference - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Port Reference</h1>
+<p class="note">Common port numbers</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('port-reference');
+  
+
+  const input = $('#input');
+  input.placeholder = "Port number (e.g. 22)";
+  const output = $('#output');
+  const ports = {
+    21: 'FTP', 22: 'SSH', 23: 'Telnet', 25: 'SMTP', 53: 'DNS',
+    80: 'HTTP', 110: 'POP3', 111: 'RPCBind', 135: 'MSRPC',
+    139: 'NetBIOS', 143: 'IMAP', 443: 'HTTPS', 445: 'SMB',
+    993: 'IMAPS', 995: 'POP3S', 3306: 'MySQL', 3389: 'RDP',
+    5432: 'PostgreSQL', 8080: 'HTTP-Proxy'
+  };
+  $('#btn-process').onclick = () => {
+    const p = parseInt(input.value);
+    output.value = ports[p] ? `${p}: ${ports[p]}` : 'Port not in common CTF list';
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = ''; };
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .hero { margin: 2rem 0; text-align: center; }
+    .hero p { color: var(--dim); margin-top: .5rem; }
+    .search-box { margin: 1.5rem auto 3rem; max-width: 600px; position: relative; }
+    .search-box input { padding: .75rem 1rem; font-size: 1.1rem; border-radius: 8px; font-family: var(--sans); }
+    .section-title { border-bottom: 1px solid var(--border); padding-bottom: .5rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: baseline; }
+    .category-nav { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 2rem; justify-content: center; }
+    .cat-btn { background: var(--surface); border: 1px solid var(--border); color: var(--dim); padding: .25rem .75rem; border-radius: 12px; font-size: .85rem; cursor: pointer; }
+    .cat-btn:hover, .cat-btn.active { color: var(--text); border-color: var(--accent); }
+    .tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .tool-card { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; transition: border-color .15s; }
+    .tool-card:hover { border-color: var(--accent); }
+    .tool-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: .5rem; }
+    .tool-name { font-weight: 600; font-size: 1.05rem; }
+    .tool-desc { color: var(--dim); font-size: .85rem; line-height: 1.4; flex-grow: 1; }
+    .tool-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; }
+    .empty-state { text-align: center; padding: 3rem; color: var(--dim); grid-column: 1 / -1; }
+    .fav-btn { font-size: 1.2rem; color: var(--dim); }
+    .fav-btn.active { color: #e3b341; }
+    footer { text-align: center; margin-top: 4rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--dim); font-size: .85rem; }
+    footer a { margin: 0 .5rem; }
+  </style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>CTF Tools</h1>
+  <p>Lightweight, privacy-first, browser-based tools for Capture The Flag challenges.</p>
+</div>
+
+<div class="search-box">
+  <input type="text" id="search" placeholder="Search tools (e.g., base64, xor, rsa...)" autofocus>
+</div>
+
+<div id="quick-links" style="display: none;">
+  <div class="section-title">
+    <h2>Favorites & Recents</h2>
+  </div>
+  <div class="tool-grid" id="quick-grid"></div>
+</div>
+
+<div class="category-nav" id="cat-nav"></div>
+
+<div id="tools-container"></div>
+
+<footer>
+  <a href="workbench/index.html">Workbench</a> &middot;
+  <a href="privacy.html">Privacy</a> &middot;
+  <a href="https://github.com/111iridescence/ctf-tools" target="_blank">GitHub</a>
+</footer>
+
+<script src="js/common.js"></script>
+<script src="js/tools.js"></script>
+<script>
+  const toolsContainer = $('#tools-container');
+  const catNav = $('#cat-nav');
+  const searchInput = $('#search');
+  const quickLinks = $('#quick-links');
+  const quickGrid = $('#quick-grid');
+  
+  let currentFilter = '';
+
+  function renderCard(t) {
+    const isFav = isFavorite(t.id);
+    const card = makeEl('a', { href: t.url.replace(/^\//, ''), class: 'tool-card' });
+    
+    const head = makeEl('div', { class: 'tool-header' });
+    head.appendChild(makeEl('div', { class: 'tool-name' }, t.name));
+    
+    const fav = makeEl('button', { class: `fav-btn ${isFav ? 'active' : ''}`, title: 'Toggle Favorite' }, isFav ? '★' : '☆');
+    fav.onclick = (e) => {
+      e.preventDefault();
+      const nowFav = toggleFavorite(t.id);
+      fav.textContent = nowFav ? '★' : '☆';
+      fav.classList.toggle('active', nowFav);
+      renderQuickLinks();
+    };
+    head.appendChild(fav);
+    
+    card.appendChild(head);
+    card.appendChild(makeEl('div', { class: 'tool-desc' }, t.desc));
+    
+    const meta = makeEl('div', { class: 'tool-meta' });
+    meta.appendChild(makeEl('span', { class: 'badge' }, t.cat));
+    if (!t.ready) meta.appendChild(makeEl('span', { class: 'badge planned' }, 'Planned'));
+    card.appendChild(meta);
+    
+    return card;
+  }
+
+  function renderTools(query = '') {
+    toolsContainer.innerHTML = '';
+    query = query.toLowerCase().trim();
+    
+    let matched = 0;
+    
+    if (query) {
+      // Search mode - ignore categories
+      const results = TOOLS.filter(t => 
+        t.name.toLowerCase().includes(query) || 
+        t.desc.toLowerCase().includes(query) || 
+        t.kw.some(k => k.includes(query))
+      );
+      
+      if (results.length === 0) {
+        toolsContainer.appendChild(makeEl('div', { class: 'empty-state' }, 'No tools found matching your search.'));
+        return;
+      }
+      
+      const grid = makeEl('div', { class: 'tool-grid' });
+      results.forEach(t => grid.appendChild(renderCard(t)));
+      toolsContainer.appendChild(grid);
+    } else {
+      // Category mode
+      CATEGORIES.forEach(cat => {
+        if (currentFilter && cat !== currentFilter) return;
+        
+        const catTools = TOOLS.filter(t => t.cat === cat);
+        if (catTools.length === 0) return;
+        
+        toolsContainer.appendChild(makeEl('div', { class: 'section-title' }, '')).appendChild(makeEl('h2', {}, cat));
+        const grid = makeEl('div', { class: 'tool-grid' });
+        catTools.forEach(t => grid.appendChild(renderCard(t)));
+        toolsContainer.appendChild(grid);
+      });
+    }
+  }
+
+  function renderQuickLinks() {
+    quickGrid.innerHTML = '';
+    const favs = getFavorites();
+    const recs = getRecents().filter(id => !favs.includes(id)).slice(0, 4);
+    
+    const show = [];
+    favs.forEach(id => { const t = TOOLS.find(x => x.id === id); if (t) show.push(t); });
+    recs.forEach(id => { const t = TOOLS.find(x => x.id === id); if (t) show.push(t); });
+    
+    if (show.length > 0 && !searchInput.value) {
+      quickLinks.style.display = 'block';
+      show.forEach(t => quickGrid.appendChild(renderCard(t)));
+    } else {
+      quickLinks.style.display = 'none';
+    }
+  }
+
+  function renderNav() {
+    catNav.innerHTML = '';
+    
+    const allBtn = makeEl('button', { class: `cat-btn ${!currentFilter ? 'active' : ''}` }, 'All');
+    allBtn.onclick = () => { currentFilter = ''; renderNav(); renderTools(); renderQuickLinks(); };
+    catNav.appendChild(allBtn);
+    
+    CATEGORIES.forEach(cat => {
+      const btn = makeEl('button', { class: `cat-btn ${currentFilter === cat ? 'active' : ''}` }, cat);
+      btn.onclick = () => { currentFilter = cat; renderNav(); renderTools(); renderQuickLinks(); };
+      catNav.appendChild(btn);
+    });
+  }
+
+  searchInput.addEventListener('input', debounce(() => {
+    const q = searchInput.value;
+    if (q) {
+      catNav.style.display = 'none';
+      quickLinks.style.display = 'none';
+    } else {
+      catNav.style.display = 'flex';
+      renderQuickLinks();
+    }
+    renderTools(q);
+  }, 150));
+
+  renderNav();
+  renderQuickLinks();
+  renderTools();
+</script>
+</body>
+</html>

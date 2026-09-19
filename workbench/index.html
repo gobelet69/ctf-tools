@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>CTF Workbench - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>CTF Workbench</h1>
+<p class="note">Sequential transformation pipeline</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label>Input</label>
+    <textarea id="input" rows="6"></textarea>
+    
+    <div style="margin-top:1rem; border:1px solid var(--border); border-radius:6px; padding:1rem;">
+      <h3 style="margin-bottom:.5rem; font-size:1rem">Pipeline</h3>
+      <div id="pipeline" style="display:flex; flex-direction:column; gap:.5rem; margin-bottom:1rem"></div>
+      <div class="row">
+        <select id="op-sel">
+          <option value="b64e">Base64 Encode</option>
+          <option value="b64d">Base64 Decode</option>
+          <option value="hexe">Hex Encode</option>
+          <option value="hexd">Hex Decode</option>
+          <option value="rot13">ROT13</option>
+          <option value="urle">URL Encode</option>
+          <option value="urld">URL Decode</option>
+          <option value="rev">Reverse</option>
+          <option value="upper">Uppercase</option>
+          <option value="lower">Lowercase</option>
+          <option value="gzipd">Gzip Decompress</option>
+        </select>
+        <button id="btn-add" class="primary">Add Operation</button>
+      </div>
+    </div>
+    
+    <div class="toolbar" style="margin-top:1rem">
+      <button id="btn-process" class="primary">Execute Pipeline</button>
+      <button id="btn-clear">Clear Input</button>
+      <button id="btn-clear-pipe">Clear Pipeline</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label>Output</label>
+    <textarea id="output" rows="18" readonly></textarea>
+    <div class="toolbar">
+      <button id="btn-copy">Copy Output</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('workbench');
+  
+
+  let pipeline = [];
+  const pipeEl = $('#pipeline');
+  
+  function renderPipe() {
+    pipeEl.innerHTML = '';
+    pipeline.forEach((op, i) => {
+      const row = makeEl('div', {style: 'display:flex; gap:.5rem; background:var(--surface); padding:.5rem; border:1px solid var(--border); border-radius:4px'});
+      row.appendChild(makeEl('div', {style: 'flex:1; font-family:var(--mono); align-self:center'}, op.name));
+      
+      const up = makeEl('button', {}, '↑');
+      up.onclick = () => { if(i>0) { [pipeline[i-1], pipeline[i]] = [pipeline[i], pipeline[i-1]]; renderPipe(); } };
+      
+      const down = makeEl('button', {}, '↓');
+      down.onclick = () => { if(i<pipeline.length-1) { [pipeline[i+1], pipeline[i]] = [pipeline[i], pipeline[i+1]]; renderPipe(); } };
+      
+      const del = makeEl('button', {}, '✖');
+      del.onclick = () => { pipeline.splice(i, 1); renderPipe(); };
+      
+      row.appendChild(up); row.appendChild(down); row.appendChild(del);
+      pipeEl.appendChild(row);
+    });
+    localStorage.setItem('ctf_workbench', JSON.stringify(pipeline));
+  }
+  
+  try { pipeline = JSON.parse(localStorage.getItem('ctf_workbench')) || []; } catch(e){}
+  renderPipe();
+  
+  $('#btn-add').onclick = () => {
+    const sel = $('#op-sel');
+    pipeline.push({ id: sel.value, name: sel.options[sel.selectedIndex].text });
+    renderPipe();
+  };
+  $('#btn-clear-pipe').onclick = () => { pipeline = []; renderPipe(); };
+  
+  async function execPipe() {
+    $('#error').textContent = '';
+    let data = $('#input').value;
+    try {
+      for(const op of pipeline) {
+        if(op.id==='b64e') data = base64Encode(data);
+        else if(op.id==='b64d') {
+          try { data = bytesToText(base64Decode(data)); } catch { data = bytesToAscii(base64Decode(data)); }
+        }
+        else if(op.id==='hexe') data = bytesToHex(textToBytes(data));
+        else if(op.id==='hexd') {
+           try { data = bytesToText(hexToBytes(data)); } catch { data = bytesToAscii(hexToBytes(data)); }
+        }
+        else if(op.id==='rot13') {
+           data = data.replace(/[a-zA-Z]/g, c => { const b = c<='Z'?65:97; return String.fromCharCode(((c.charCodeAt(0)-b+13)%26)+b); });
+        }
+        else if(op.id==='urle') data = encodeURIComponent(data);
+        else if(op.id==='urld') data = decodeURIComponent(data);
+        else if(op.id==='rev') data = data.split('').reverse().join('');
+        else if(op.id==='upper') data = data.toUpperCase();
+        else if(op.id==='lower') data = data.toLowerCase();
+        else if(op.id==='gzipd') {
+           if(typeof DecompressionStream === 'undefined') throw new Error('DecompressionStream not supported');
+           const b = typeof data==='string' ? hexToBytes(data.replace(/[^0-9a-fA-F]/g,'')) : data;
+           const ds = new DecompressionStream('gzip');
+           const writer = ds.writable.getWriter();
+           writer.write(b); writer.close();
+           const res = await new Response(ds.readable).arrayBuffer();
+           data = bytesToText(new Uint8Array(res));
+        }
+      }
+      $('#output').value = data;
+    } catch(e) { $('#error').textContent = 'Error: ' + e.message; }
+  }
+  
+  $('#btn-process').onclick = execPipe;
+  $('#btn-clear').onclick = () => { $('#input').value = $('#output').value = $('#error').textContent = ''; };
+  $('#btn-swap').onclick = () => { if($('#output').value) { $('#input').value = $('#output').value; $('#output').value = ''; } };
+  addCopyButton($('#btn-copy'), () => $('#output').value);
+
+</script>
+</body>
+</html>

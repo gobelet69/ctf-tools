@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Chinese Remainder Theorem - CTF Tools</title><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="../style.css"></head>
+<body><nav><a href="../index.html">&larr; Back to Tools</a></nav><h1>Chinese Remainder Theorem</h1><p class="note">Solve systems of congruences</p>
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    <div class="toolbar"><button id="btn-process" class="primary">Process</button><button id="btn-clear">Clear</button></div>
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    <div class="toolbar"><button id="btn-copy">Copy</button><button id="btn-swap">Output &rarr; Input</button></div>
+  </div>
+</div>
+<script src="../js/common.js"></script><script>trackUsage('crt');
+
+  $('#input').placeholder = "x = a mod n\nEnter one per line as: a n\nExample:\n2 3\n3 5\n2 7";
+  $('#btn-process').onclick = () => {
+    $('#error').textContent = '';
+    try {
+      const lines = $('#input').value.trim().split('\n').filter(Boolean);
+      let A = [], N = [];
+      lines.forEach(l => {
+        const parts = l.trim().split(/\s+/);
+        if(parts.length===2) { A.push(BigInt(parts[0])); N.push(BigInt(parts[1])); }
+      });
+      if(A.length === 0) return;
+      
+      let prod = 1n;
+      N.forEach(n => prod *= n);
+      
+      let sum = 0n;
+      for(let i=0; i<N.length; i++) {
+        const p = prod / N[i];
+        const inv = modInverse(p, N[i]);
+        sum += A[i] * inv * p;
+      }
+      
+      const x = sum % prod;
+      $('#output').value = `Solution: x = ${x}\nModulo:   M = ${prod}\n\nx ≡ ${x} (mod ${prod})`;
+    } catch(e) { $('#error').textContent = 'Error solving system (Check inputs are coprime)'; }
+  };
+  $('#btn-clear').onclick = () => $('#input').value = $('#output').value = '';
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => $('#output').value);
+</script></body></html>

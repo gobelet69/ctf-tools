@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Hash Identifier - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Hash Identifier</h1>
+<p class="note">Identify hash type heuristically</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('hash-id');
+  
+
+  const input = $('#input');
+  const output = $('#output');
+  
+  $('#btn-process').onclick = () => {
+    const v = input.value.trim().toLowerCase();
+    if(!v) return output.value = '';
+    
+    let res = `Length: ${v.length}\n\n`;
+    if(/^[a-f0-9]+$/.test(v)) {
+      if(v.length === 32) res += `Possibilities:\n- MD5\n- NTLM\n- MD4`;
+      else if(v.length === 40) res += `Possibilities:\n- SHA-1\n- RIPEMD-160`;
+      else if(v.length === 64) res += `Possibilities:\n- SHA-256\n- SHA3-256`;
+      else if(v.length === 96) res += `Possibilities:\n- SHA-384`;
+      else if(v.length === 128) res += `Possibilities:\n- SHA-512\n- Whirlpool`;
+      else res += `Unknown hex hash length`;
+    } else {
+      res += `Not a standard hex hash`;
+    }
+    output.value = res;
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = ''; input.focus(); };
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

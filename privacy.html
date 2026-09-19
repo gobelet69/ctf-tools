@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Privacy - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .content { max-width: 700px; margin: 2rem auto; }
+    ul { margin: 1rem 0 1rem 2rem; }
+    li { margin-bottom: .5rem; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html">&larr; Back to Tools</a>
+</nav>
+
+<div class="content">
+  <h1>Privacy Policy</h1>
+  <p>CTF Tools is designed from the ground up to respect your privacy and secure your challenge data.</p>
+  
+  <h2>100% Local Processing</h2>
+  <p>All data you enter into this tool—whether it's pasted text, uploaded files, or generated keys—is processed entirely within your web browser.</p>
+  <ul>
+    <li><strong>No backend servers:</strong> We do not have backend servers that receive your data.</li>
+    <li><strong>No file uploads:</strong> When you "upload" a file to a tool (like the hex viewer or file hasher), the file is read locally using the HTML5 File API. It never leaves your computer.</li>
+    <li><strong>No analytics:</strong> We do not use Google Analytics, tracking pixels, or any other telemetry.</li>
+    <li><strong>No accounts:</strong> There are no user accounts, logins, or sessions.</li>
+  </ul>
+
+  <h2>Local Storage</h2>
+  <p>To improve your experience, CTF Tools uses your browser's standard <code>localStorage</code> API to save your preferences. This data remains exclusively on your device.</p>
+  <p>We store:</p>
+  <ul>
+    <li>Your favorite tools</li>
+    <li>Your most recently used tools</li>
+    <li>Your local "Scratchpad" notes</li>
+    <li>Your saved Workbench pipelines</li>
+  </ul>
+  
+  <h2>Third-Party Dependencies</h2>
+  <p>CTF Tools is built to use native browser APIs (like WebCrypto) wherever possible. In the few cases where a third-party library is required (for example, for MD5 hashing since WebCrypto does not support it), the library is bundled directly with the site. We do not load scripts from third-party CDNs at runtime, preventing potential tracking by those CDNs.</p>
+
+  <h2>Static Hosting</h2>
+  <p>This site is statically hosted. The hosting provider (such as Cloudflare Pages or GitHub Pages) may temporarily log standard web server access logs (IP address, user agent, requested URL) as part of their baseline infrastructure, but this logging contains no application data or inputs.</p>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>TCP Flags Decoder - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>TCP Flags Decoder</h1>
+<p class="note">Decode TCP flag bytes to SYN, ACK, etc.</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('tcp-flags');
+  
+
+  const input = $('#input');
+  input.placeholder = "e.g. 0x12 or 18";
+  const output = $('#output');
+  $('#btn-process').onclick = () => {
+    try {
+      let v = input.value.trim();
+      if(v.startsWith('0x')) v = parseInt(v, 16);
+      else v = parseInt(v, 10);
+      
+      let res = '';
+      if(v & 128) res += 'CWR (Congestion Window Reduced)\n';
+      if(v & 64) res += 'ECE (ECN-Echo)\n';
+      if(v & 32) res += 'URG (Urgent)\n';
+      if(v & 16) res += 'ACK (Acknowledgment)\n';
+      if(v & 8) res += 'PSH (Push)\n';
+      if(v & 4) res += 'RST (Reset)\n';
+      if(v & 2) res += 'SYN (Synchronize)\n';
+      if(v & 1) res += 'FIN (Finish)\n';
+      
+      output.value = res || 'No flags set (Null scan?)';
+      $('#error').textContent = '';
+    } catch(e) { $('#error').textContent = 'Invalid number'; }
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = ''; };
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

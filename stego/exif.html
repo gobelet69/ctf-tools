@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>EXIF Viewer - CTF Tools</title><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="../style.css"></head>
+<body><nav><a href="../index.html">&larr; Back to Tools</a></nav><h1>EXIF Viewer</h1><p class="note">Extract EXIF metadata using local EXIF.js</p>
+
+<div class="grid" style="margin-top: 1rem;">
+  <div class="card">
+    <label>Select JPEG/TIFF Image</label>
+    <input type="file" id="file" accept="image/jpeg, image/tiff" />
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label>EXIF Metadata</label>
+    <div id="output" class="output" style="min-height:200px; font-family:var(--mono); white-space:pre-wrap"></div>
+  </div>
+</div>
+
+<script src="../js/common.js"></script><script>trackUsage('exif-viewer');
+
+  // Lazy load the dependency
+  const script = document.createElement('script');
+  script.src = '../vendor/exif.js';
+  document.head.appendChild(script);
+
+  const fileIn = $('#file');
+  const output = $('#output');
+  const err = $('#error');
+  
+  fileIn.onchange = () => {
+    err.textContent = '';
+    output.textContent = '';
+    const f = fileIn.files[0];
+    if(!f) return;
+    
+    if (typeof EXIF === 'undefined') {
+      err.textContent = 'EXIF parser library is still loading or failed to load.';
+      return;
+    }
+    
+    EXIF.getData(f, function() {
+      const allTags = EXIF.getAllTags(this);
+      if (Object.keys(allTags).length === 0) {
+        output.textContent = 'No EXIF metadata found in this image.';
+        return;
+      }
+      
+      let res = '';
+      for(let tag in allTags) {
+        if(tag === 'thumbnail' || tag === 'MakerNote') continue; // skip huge binary dumps
+        let val = allTags[tag];
+        // Prevent object/array bleeding out unsafely
+        if(typeof val === 'object' && val != null) {
+          if(val instanceof Number || val instanceof String) val = val.toString();
+          else val = JSON.stringify(val);
+        }
+        res += `[ ${tag} ]\n  ${val}\n\n`;
+      }
+      output.textContent = res; // textContent prevents any HTML rendering!
+    });
+  };
+</script></body></html>

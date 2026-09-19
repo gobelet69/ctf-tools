@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Strings Extractor - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Strings Extractor</h1>
+<p class="note">Extract readable strings from binary files</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label>Select File</label>
+    <input type="file" id="file" />
+    <label style="margin-top:1rem">Min Length</label>
+    <input type="number" id="len" value="4" style="width:100px" />
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label>Extracted Strings</label>
+    <textarea id="output" rows="12" readonly></textarea>
+    <div class="toolbar"><button id="btn-copy">Copy</button></div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('strings-tool');
+  
+
+  const fileIn = $('#file');
+  const output = $('#output');
+  const lenIn = $('#len');
+  
+  fileIn.onchange = async () => {
+    const file = fileIn.files[0];
+    if(!file) return;
+    output.value = 'Processing...';
+    try {
+      const b = await readFile(file);
+      const min = parseInt(lenIn.value) || 4;
+      let res = [], cur = '';
+      for(let i=0; i<b.length; i++) {
+        const c = b[i];
+        if(c >= 32 && c <= 126) cur += String.fromCharCode(c);
+        else {
+          if(cur.length >= min) res.push(cur);
+          cur = '';
+        }
+      }
+      if(cur.length >= min) res.push(cur);
+      output.value = res.join('\n');
+    } catch(e) { output.value = 'Error'; }
+  };
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

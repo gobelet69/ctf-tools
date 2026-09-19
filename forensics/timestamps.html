@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Timestamp Converter - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Timestamp Converter</h1>
+<p class="note">Convert Unix/Epoch times</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('timestamps');
+  
+
+  const input = $('#input');
+  input.placeholder = "Enter Unix timestamp (seconds or ms)";
+  const output = $('#output');
+  
+  $('#btn-process').onclick = () => {
+    let v = parseInt(input.value);
+    if(isNaN(v)) return output.value = 'Invalid';
+    if(v < 10000000000) v *= 1000; // Assume seconds if small enough
+    const d = new Date(v);
+    output.value = `UTC:   ${d.toUTCString()}\nLocal: ${d.toString()}\nISO:   ${d.toISOString()}`;
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = ''; input.focus(); };
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

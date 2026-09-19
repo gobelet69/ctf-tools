@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Hex Viewer - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Hex Viewer</h1>
+<p class="note">Paginated hex dump with ASCII sidebar</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label>Select File</label>
+    <input type="file" id="file" />
+    <div class="toolbar" style="margin-top:1rem">
+      <button id="btn-prev">&larr; Prev Page</button>
+      <span id="page-info" style="align-self:center; margin:0 .5rem;"></span>
+      <button id="btn-next">Next Page &rarr;</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label>Hex Dump</label>
+    <textarea id="output" rows="16" readonly style="font-family: var(--mono); white-space: pre; overflow-wrap: normal; overflow-x: scroll;"></textarea>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('hex-viewer');
+  
+
+  let bytes = null, page = 0, PAGE_SIZE = 512;
+  
+  function render() {
+    if(!bytes) return;
+    let res = '';
+    const start = page * PAGE_SIZE;
+    const end = Math.min(start + PAGE_SIZE, bytes.length);
+    for(let i=start; i<end; i+=16) {
+      const chunk = bytes.slice(i, i+16);
+      const hx = Array.from(chunk).map(b => b.toString(16).padStart(2,'0')).join(' ');
+      const asc = Array.from(chunk).map(b => (b >= 32 && b <= 126) ? String.fromCharCode(b) : '.').join('');
+      res += i.toString(16).padStart(8,'0') + '  ' + hx.padEnd(48, ' ') + '  |' + asc + '|\n';
+    }
+    $('#output').value = res;
+    $('#page-info').textContent = `Page ${page+1} / ${Math.ceil(bytes.length/PAGE_SIZE)}`;
+  }
+  
+  $('#file').onchange = async (e) => {
+    const f = e.target.files[0];
+    if(!f) return;
+    bytes = await readFile(f);
+    page = 0;
+    render();
+  };
+  $('#btn-prev').onclick = () => { if(page > 0) { page--; render(); } };
+  $('#btn-next').onclick = () => { if((page+1)*PAGE_SIZE < bytes.length) { page++; render(); } };
+
+</script>
+</body>
+</html>

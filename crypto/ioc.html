@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Index of Coincidence - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Index of Coincidence</h1>
+<p class="note">Calculate IC for cipher classification</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('ioc');
+  
+
+  const input = $('#input');
+  const output = $('#output');
+  $('#btn-process').onclick = () => {
+    let text = input.value.toUpperCase().replace(/[^A-Z]/g, '');
+    if(!text) return output.value = '';
+    
+    let freqs = new Array(26).fill(0);
+    for(let i=0; i<text.length; i++) freqs[text.charCodeAt(i) - 65]++;
+    
+    let sum = 0;
+    for(let i=0; i<26; i++) sum += freqs[i] * (freqs[i] - 1);
+    
+    const n = text.length;
+    const ic = sum / (n * (n - 1));
+    const normalized = ic * 26; // Kappa
+    
+    output.value = `Index of Coincidence (IC): ${ic.toFixed(5)}\nNormalized (Kappa):        ${normalized.toFixed(3)}\n\nReference:\nEnglish Text IC:  ~0.0667 (Kappa 1.73)\nRandom/Poly IC:   ~0.0385 (Kappa 1.00)\n`;
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = ''; };
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

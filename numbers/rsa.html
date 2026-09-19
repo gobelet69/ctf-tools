@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>RSA Calculator - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>RSA Calculator</h1>
+<p class="note">Compute RSA parameters</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('rsa');
+  
+
+  const input = $('#input');
+  input.placeholder = "Enter parameters (e.g., p=... q=... e=...)";
+  const output = $('#output');
+  const err = $('#error');
+  
+  $('#btn-process').onclick = () => {
+    err.textContent = '';
+    const text = input.value;
+    const extract = (v) => { const m = text.match(new RegExp(v+'\s*=\s*(\d+)')); return m ? BigInt(m[1]) : null; };
+    
+    try {
+      const p = extract('p');
+      const q = extract('q');
+      const e = extract('e');
+      
+      if(!p || !q || !e) { err.textContent = 'Need p, q, and e'; return; }
+      
+      const n = p * q;
+      const phi = (p - 1n) * (q - 1n);
+      const d = modInverse(e, phi);
+      
+      output.value = `n = ${n}\n\nφ(n) = ${phi}\n\nd = ${d}`;
+    } catch(ex) { err.textContent = ex.message; }
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = err.textContent = ''; input.focus(); };
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

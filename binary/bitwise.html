@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Bitwise Calculator - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Bitwise Calculator</h1>
+<p class="note">AND, OR, XOR, NOT, shift operations</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('bitwise');
+  
+
+  const input = $('#input');
+  input.placeholder = "Hex or Decimal (e.g. 0x1234)\nOne per line";
+  const output = $('#output');
+  
+  const tb = $$('.toolbar')[0];
+  tb.innerHTML = '<select id="op"><option value="and">AND</option><option value="or">OR</option><option value="xor">XOR</option><option value="not">NOT (1st line only)</option><option value="shl">Shift Left (<< 1)</option><option value="shr">Shift Right (>> 1)</option></select> ';
+  tb.appendChild(makeEl('button', {class: 'primary', id: 'btn-process'}, 'Calculate'));
+  
+  $('#btn-process').onclick = () => {
+    $('#error').textContent = '';
+    try {
+      const lines = input.value.trim().split('\n').filter(Boolean);
+      if(lines.length === 0) return;
+      const getVal = (v) => v.startsWith('0x') ? BigInt(v) : BigInt(v);
+      const op = $('#op').value;
+      
+      let res = getVal(lines[0]);
+      
+      if(op === 'not') res = ~res;
+      else if(op === 'shl') res = res << 1n;
+      else if(op === 'shr') res = res >> 1n;
+      else {
+        for(let i=1; i<lines.length; i++) {
+          const v = getVal(lines[i]);
+          if(op === 'and') res &= v;
+          if(op === 'or') res |= v;
+          if(op === 'xor') res ^= v;
+        }
+      }
+      
+      output.value = `Hex: 0x${res.toString(16).toUpperCase()}\nDec: ${res.toString(10)}\nBin: 0b${res.toString(2)}`;
+    } catch(e) { $('#error').textContent = 'Invalid input'; }
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = ''; };
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

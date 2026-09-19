@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Substitution Helper - CTF Tools</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<nav><a href="../index.html">&larr; Back to Tools</a></nav>
+<h1>Substitution Helper</h1>
+<p class="note">Interactive substitution cipher solver</p>
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label>Ciphertext</label>
+    <textarea id="input" rows="6"></textarea>
+    <label style="margin-top:1rem">Substitutions (Format: A=E, B=T)</label>
+    <input type="text" id="subs" placeholder="e.g. A=E, B=T">
+    <div class="toolbar" style="margin-top:1rem"><button id="btn-process" class="primary">Apply</button></div>
+  </div>
+  <div>
+    <label>Result</label>
+    <div id="output" class="output" style="min-height:200px; font-family:var(--mono); white-space:pre-wrap"></div>
+  </div>
+</div>
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('substitution');
+  $('#btn-process').onclick = () => {
+    const text = $('#input').value.toUpperCase();
+    const subStr = $('#subs').value.toUpperCase();
+    const map = {};
+    subStr.split(',').forEach(p => {
+      const parts = p.split('=');
+      if(parts.length===2) map[parts[0].trim()] = parts[1].trim();
+    });
+    
+    const out = $('#output');
+    out.textContent = ''; // Clear safely
+    
+    for(let i=0; i<text.length; i++) {
+      const c = text[i];
+      if(map[c]) {
+        const span = document.createElement('span');
+        span.style.color = 'var(--accent2)';
+        span.style.fontWeight = 'bold';
+        span.textContent = map[c];
+        out.appendChild(span);
+      } else if(/[A-Z]/.test(c)) {
+        const span = document.createElement('span');
+        span.style.color = 'var(--dim)';
+        span.textContent = c.toLowerCase();
+        out.appendChild(span);
+      } else {
+        out.appendChild(document.createTextNode(c));
+      }
+    }
+  };
+</script>
+</body></html>

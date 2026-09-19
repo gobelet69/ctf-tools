@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Single-Byte XOR Brute Force - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Single-Byte XOR Brute Force</h1>
+<p class="note">Try all 256 keys and rank results</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('single-byte-xor');
+  
+
+  const input = $('#input');
+  input.placeholder = "Hex encoded ciphertext";
+  const output = $('#output');
+  const err = $('#error');
+  
+  $('#btn-process').onclick = () => {
+    err.textContent = '';
+    try {
+      const b = hexToBytes(input.value);
+      const candidates = [];
+      for(let key=0; key<256; key++) {
+        const out = new Uint8Array(b.length);
+        let score = 0;
+        for(let i=0; i<b.length; i++) {
+          const v = b[i] ^ key;
+          out[i] = v;
+          // Score by common English chars (space, e, t, a, o, i, n)
+          if(v === 32) score += 3;
+          else if(v >= 97 && v <= 122) score += 1; // a-z
+          else if(v >= 65 && v <= 90) score += 0.5; // A-Z
+        }
+        candidates.push({key, score, text: bytesToAscii(out).replace(/[^\x20-\x7E]/g, '.')});
+      }
+      candidates.sort((a,b) => b.score - a.score);
+      
+      let res = '';
+      for(let i=0; i<20; i++) {
+        const c = candidates[i];
+        res += `Key 0x${c.key.toString(16).padStart(2,'0')} (Score: ${c.score}):\n${c.text}\n\n`;
+      }
+      output.value = res;
+    } catch(e) { err.textContent = e.message; }
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = err.textContent = ''; input.focus(); };
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

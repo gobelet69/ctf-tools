@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>GCD / ExtGCD - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>GCD / ExtGCD</h1>
+<p class="note">Greatest common divisor and Bézout coefficients</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('gcd-tool');
+  
+
+  const input = $('#input');
+  input.placeholder = "Enter two numbers (space or newline separated)";
+  const output = $('#output');
+  const err = $('#error');
+  
+  $('#btn-process').onclick = () => {
+    err.textContent = '';
+    const parts = input.value.trim().split(/\s+/);
+    if(parts.length < 2) { err.textContent = 'Enter at least two numbers'; return; }
+    
+    try {
+      const a = BigInt(parts[0]);
+      const b = BigInt(parts[1]);
+      const { gcd: g, x, y } = extgcd(a, b);
+      output.value = `a = ${a}\nb = ${b}\n\nGCD: ${g}\n\nExtended Euclidean (Bézout coefficients):\n${a}*(${x}) + ${b}*(${y}) = ${g}`;
+    } catch(e) { err.textContent = 'Invalid numbers'; }
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = err.textContent = ''; input.focus(); };
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

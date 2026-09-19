@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>LSB Viewer - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>LSB Viewer</h1>
+<p class="note">View least significant bits of image channels</p>
+
+
+<div class="grid" style="margin-top: 1rem;">
+  <div class="card">
+    <label>Select Image</label>
+    <input type="file" id="file" accept="image/png, image/jpeg, image/bmp, image/webp" />
+    <div id="controls" style="margin-top:1rem; display:none;">
+      
+<select id="chan-sel" style="margin-bottom:.5rem"><option value="-1">All (RGB)</option><option value="0">Red</option><option value="1">Green</option><option value="2">Blue</option></select>
+<select id="bit-sel"><option value="0">Bit 0 (LSB)</option><option value="1">Bit 1</option><option value="2">Bit 2</option><option value="3">Bit 3</option><option value="7">Bit 7 (MSB)</option></select>
+
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label>Result Viewer</label>
+    <div style="border:1px solid var(--border); border-radius:4px; overflow:auto; max-height:600px; background:var(--surface);">
+      <canvas id="canvas" style="display:block; margin:0 auto; max-width:100%;"></canvas>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('lsb-viewer');
+  
+
+  const fileIn = $('#file');
+  const canvas = $('#canvas');
+  const ctx = canvas.getContext('2d', {willReadFrequently: true});
+  const err = $('#error');
+  const controls = $('#controls');
+  let originalImage = null;
+  
+  fileIn.onchange = () => {
+    err.textContent = '';
+    const f = fileIn.files[0];
+    if(!f) return;
+    const url = URL.createObjectURL(f);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      if(img.width * img.height > 10000000) { err.textContent = 'Image too large for quick canvas triage (limit ~10MP).'; return; }
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      originalImage = ctx.getImageData(0, 0, img.width, img.height);
+      controls.style.display = 'block';
+      if(typeof onImageLoad === 'function') onImageLoad();
+    };
+    img.onerror = () => err.textContent = 'Invalid image';
+    img.src = url;
+  };
+  
+
+  const chanSel = $('#chan-sel');
+  const bitSel = $('#bit-sel');
+  
+  function process() {
+    if(!originalImage) return;
+    const out = ctx.createImageData(canvas.width, canvas.height);
+    const c = parseInt(chanSel.value);
+    const b = parseInt(bitSel.value);
+    
+    for(let i=0; i<originalImage.data.length; i+=4) {
+      // rgb mode means all 3 channels
+      let bitSet = false;
+      if(c === -1) {
+        bitSet = ((originalImage.data[i] >> b) & 1) || ((originalImage.data[i+1] >> b) & 1) || ((originalImage.data[i+2] >> b) & 1);
+      } else {
+        bitSet = ((originalImage.data[i+c] >> b) & 1);
+      }
+      
+      const v = bitSet ? 255 : 0;
+      out.data[i] = out.data[i+1] = out.data[i+2] = v;
+      out.data[i+3] = 255; // alpha full
+    }
+    ctx.putImageData(out, 0, 0);
+  }
+  
+  window.onImageLoad = process;
+  chanSel.onchange = process;
+  bitSel.onchange = process;
+
+</script>
+</body>
+</html>

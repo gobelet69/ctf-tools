@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Subnet Calculator - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Subnet Calculator</h1>
+<p class="note">Calculate network from CIDR</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('subnet');
+  
+
+  const input = $('#input');
+  input.placeholder = "e.g., 192.168.1.10/24";
+  const output = $('#output');
+  
+  $('#btn-process').onclick = () => {
+    try {
+      const [ip, cidrStr] = input.value.trim().split('/');
+      const cidr = parseInt(cidrStr) || 32;
+      const parts = ip.split('.').map(Number);
+      if(parts.length !== 4) throw new Error();
+      
+      const ipNum = (parts[0]<<24 | parts[1]<<16 | parts[2]<<8 | parts[3]) >>> 0;
+      const mask = (~0 << (32 - cidr)) >>> 0;
+      const net = (ipNum & mask) >>> 0;
+      const bcast = (net | ~mask) >>> 0;
+      const num2ip = n => `${(n>>>24)&255}.${(n>>>16)&255}.${(n>>>8)&255}.${n&255}`;
+      
+      output.value = `IP:         ${ip}\nNetmask:    ${num2ip(mask)}\nNetwork:    ${num2ip(net)}\nBroadcast:  ${num2ip(bcast)}\nHosts:      ${Math.max(0, bcast - net - 1)}`;
+    } catch(e) { output.value = 'Invalid CIDR format'; }
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = ''; input.focus(); };
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

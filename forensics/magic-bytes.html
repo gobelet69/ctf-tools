@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Magic Bytes / File Signature - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Magic Bytes / File Signature</h1>
+<p class="note">Detect file type from hex signature</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('magic-bytes');
+  
+
+  const input = $('#input');
+  input.placeholder = "Enter hex (e.g., 89 50 4E 47)";
+  const output = $('#output');
+  
+  const sigs = [
+    {h:'89504E470D0A1A0A', ext:'PNG'},
+    {h:'FFD8FF', ext:'JPEG'},
+    {h:'47494638', ext:'GIF'},
+    {h:'25504446', ext:'PDF'},
+    {h:'504B0304', ext:'ZIP'},
+    {h:'526172211A07', ext:'RAR'},
+    {h:'7F454C46', ext:'ELF'},
+    {h:'4D5A', ext:'PE/EXE'},
+    {h:'1F8B08', ext:'GZIP'},
+    {h:'FD377A585A00', ext:'XZ'}
+  ];
+  
+  $('#btn-process').onclick = () => {
+    const h = input.value.replace(/\s+/g, '').toUpperCase();
+    if(!h) return output.value = '';
+    const matches = sigs.filter(s => h.startsWith(s.h) || s.h.startsWith(h));
+    if(matches.length > 0) {
+      output.value = matches.map(m => `${m.ext} (${m.h})`).join('\n');
+    } else output.value = 'Unknown signature';
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = ''; input.focus(); };
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

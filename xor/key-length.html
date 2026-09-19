@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>XOR Key Length Analysis - CTF Tools</title><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="../style.css"></head>
+<body><nav><a href="../index.html">&larr; Back to Tools</a></nav><h1>XOR Key Length Analysis</h1><p class="note">Estimate repeating-key XOR key length via Hamming Distance</p>
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    <div class="toolbar"><button id="btn-process" class="primary">Process</button><button id="btn-clear">Clear</button></div>
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    <div class="toolbar"><button id="btn-copy">Copy</button><button id="btn-swap">Output &rarr; Input</button></div>
+  </div>
+</div>
+<script src="../js/common.js"></script><script>trackUsage('xor-key-length');
+
+  function hamming(b1, b2) {
+    let dist = 0;
+    for(let i=0; i<b1.length; i++) {
+      let v = b1[i] ^ b2[i];
+      while(v > 0) { dist += v & 1; v >>= 1; }
+    }
+    return dist;
+  }
+  $('#btn-process').onclick = () => {
+    $('#error').textContent = '';
+    try {
+      let v = $('#input').value.replace(/\s+/g, '');
+      if(!v) return;
+      const b = hexToBytes(v);
+      let results = [];
+      
+      for(let k=2; k<=40; k++) {
+        if(b.length < k*2) break;
+        let dist = 0, blocks = 0;
+        for(let i=0; i<Math.floor(b.length/k)-1; i++) {
+          dist += hamming(b.slice(i*k, (i+1)*k), b.slice((i+1)*k, (i+2)*k));
+          blocks++;
+        }
+        if(blocks > 0) {
+          const norm = dist / blocks / k;
+          results.push({k, norm});
+        }
+      }
+      results.sort((a,b) => a.norm - b.norm);
+      let res = `Top likely key lengths (lowest normalized Hamming distance):\n\nLength | Distance\n-------|---------\n`;
+      results.slice(0, 10).forEach(r => res += `${r.k.toString().padEnd(6)} | ${r.norm.toFixed(4)}\n`);
+      $('#output').value = res;
+    } catch(e) { $('#error').textContent = 'Invalid hex input'; }
+  };
+  $('#btn-clear').onclick = () => $('#input').value = $('#output').value = '';
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => $('#output').value);
+</script></body></html>

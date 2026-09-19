@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Base64 Encode / Decode - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Base64 Encode / Decode</h1>
+<p class="note">Encode text/bytes to Base64, or decode Base64 back to text/bytes.</p>
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter text or Base64..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-encode" class="primary">Encode</button>
+      <button id="btn-decode">Decode</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('base64');
+  
+  const input = $('#input');
+  const output = $('#output');
+  const err = $('#error');
+  
+  $('#btn-encode').addEventListener('click', () => {
+    err.textContent = '';
+    if (!input.value) { output.value = ''; return; }
+    try {
+      output.value = base64Encode(input.value);
+    } catch (e) {
+      err.textContent = 'Error: ' + e.message;
+    }
+  });
+  
+  $('#btn-decode').addEventListener('click', () => {
+    err.textContent = '';
+    if (!input.value) { output.value = ''; return; }
+    try {
+      const bytes = base64Decode(input.value);
+      try {
+        // Try to decode as UTF-8 first
+        output.value = bytesToText(bytes);
+      } catch {
+        // Fall back to ASCII/binary representation if invalid UTF-8
+        output.value = bytesToAscii(bytes);
+      }
+    } catch (e) {
+      err.textContent = 'Error: Invalid Base64 input';
+    }
+  });
+  
+  $('#btn-clear').addEventListener('click', () => {
+    input.value = '';
+    output.value = '';
+    err.textContent = '';
+    input.focus();
+  });
+  
+  $('#btn-swap').addEventListener('click', () => {
+    if (output.value) {
+      input.value = output.value;
+      output.value = '';
+      err.textContent = '';
+    }
+  });
+  
+  addCopyButton($('#btn-copy'), () => output.value);
+</script>
+</body>
+</html>

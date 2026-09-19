@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Base64 Detector - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Base64 Detector</h1>
+<p class="note">Extract and decode Base64 segments</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('base64-detect');
+  
+
+  const input = $('#input');
+  const output = $('#output');
+  
+  $('#btn-process').onclick = () => {
+    const text = input.value;
+    const re = /(?:[A-Za-z0-9+/]{4}){2,}(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?/g;
+    const matches = text.match(re) || [];
+    if(matches.length === 0) return output.value = 'No Base64 segments found.';
+    
+    let res = '';
+    matches.forEach(m => {
+      res += `[ Match: ${m} ]\n`;
+      try {
+        const d = base64Decode(m);
+        try { res += 'UTF-8: ' + bytesToText(d) + '\n\n'; }
+        catch { res += 'ASCII: ' + bytesToAscii(d) + '\n\n'; }
+      } catch { res += 'Invalid decode\n\n'; }
+    });
+    output.value = res;
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = ''; };
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

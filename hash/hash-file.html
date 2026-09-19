@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Hash File - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Hash File</h1>
+<p class="note">Calculate hashes of uploaded files</p>
+
+
+<div class="grid" style="margin-top: 1rem;">
+  <div class="card">
+    <label>Select File</label>
+    <input type="file" id="file" />
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label>Hashes</label>
+    <textarea id="output" rows="8" readonly></textarea>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('hash-file');
+  
+
+  const fileIn = $('#file');
+  const output = $('#output');
+  const err = $('#error');
+  
+  fileIn.onchange = async () => {
+    err.textContent = '';
+    const file = fileIn.files[0];
+    if(!file) return output.value = '';
+    
+    output.value = 'Hashing...';
+    try {
+      const bytes = await readFile(file);
+      let res = `File: ${file.name}\nSize: ${file.size} bytes\n\n`;
+      
+      res += `SHA-1:   ${await hashBytes('SHA-1', bytes)}\n`;
+      res += `SHA-256: ${await hashBytes('SHA-256', bytes)}\n`;
+      res += `SHA-512: ${await hashBytes('SHA-512', bytes)}\n`;
+      
+      output.value = res;
+    } catch(e) {
+      err.textContent = 'Error reading file';
+      output.value = '';
+    }
+  };
+
+</script>
+</body>
+</html>

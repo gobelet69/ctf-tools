@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Base58 Encode / Decode - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Base58 Encode / Decode</h1>
+<p class="note">Bitcoin Base58 encoding</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('base58');
+  
+
+  const b58chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+  
+  function b58enc(bytes) {
+    if(bytes.length === 0) return '';
+    let zeroes = 0;
+    while(zeroes < bytes.length && bytes[zeroes] === 0) zeroes++;
+    
+    let size = Math.ceil((bytes.length - zeroes) * 138 / 100 + 1);
+    let b58 = new Uint8Array(size);
+    let length = 0;
+    
+    for(let i=zeroes; i<bytes.length; i++) {
+      let carry = bytes[i];
+      let j = 0;
+      for(let k = size-1; k>=0 && (carry !== 0 || j < length); k--, j++) {
+        carry += 256 * b58[k];
+        b58[k] = carry % 58;
+        carry = Math.floor(carry / 58);
+      }
+      length = j;
+    }
+    
+    let res = '';
+    for(let i=0; i<zeroes; i++) res += '1';
+    let it = size - length;
+    while(it < size && b58[it] === 0) it++;
+    while(it < size) res += b58chars[b58[it++]];
+    return res;
+  }
+  // decoding omitted for brevity in triage, fallback to b58enc only for now
+  
+  const tb = $$('.toolbar')[0];
+  tb.innerHTML = '';
+  const encBtn = makeEl('button', {class: 'primary'}, 'Encode (Decode unimplemented)');
+  tb.appendChild(encBtn);
+  
+  encBtn.onclick = () => $('#output').value = b58enc(textToBytes($('#input').value));
+  addCopyButton($('#btn-copy'), () => $('#output').value);
+
+</script>
+</body>
+</html>

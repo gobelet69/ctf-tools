@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>ZIP Archive Inspector - CTF Tools</title><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="../style.css"></head>
+<body><nav><a href="../index.html">&larr; Back to Tools</a></nav><h1>ZIP Archive Inspector</h1><p class="note">List ZIP contents securely without extraction</p>
+
+<div class="grid" style="margin-top: 1rem;">
+  <div class="card">
+    <label>Select ZIP File</label>
+    <input type="file" id="file" accept=".zip" />
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label>Central Directory Inspection</label>
+    <div style="overflow-x:auto">
+      <table id="zip-table" style="font-family:var(--mono); font-size:0.85rem; width:100%; text-align:left; border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border)">
+            <th style="padding:.2rem">Filename</th>
+            <th style="padding:.2rem">Method</th>
+            <th style="padding:.2rem">Compressed</th>
+            <th style="padding:.2rem">Uncompressed</th>
+            <th style="padding:.2rem">CRC32</th>
+          </tr>
+        </thead>
+        <tbody id="zip-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="../js/common.js"></script><script>trackUsage('archive-inspect');
+
+  const fileIn = $('#file');
+  const err = $('#error');
+  const tbody = $('#zip-body');
+  
+  fileIn.onchange = async () => {
+    err.textContent = ''; tbody.innerHTML = '';
+    const f = fileIn.files[0];
+    if(!f) return;
+    
+    // Read the last 64KB where EOCD must be
+    const chunkSize = Math.min(f.size, 65535 + 22);
+    const slice = f.slice(f.size - chunkSize);
+    try {
+      const b = await readFile(slice);
+      const view = new DataView(b.buffer);
+      
+      let eocdOffset = -1;
+      for(let i = b.length - 22; i >= 0; i--) {
+        if(view.getUint32(i, true) === 0x06054B50) { eocdOffset = i; break; }
+      }
+      if(eocdOffset === -1) throw new Error('Could not find End of Central Directory (Not a valid ZIP)');
+      
+      const totalEntries = view.getUint16(eocdOffset + 10, true);
+      const cdOffset = view.getUint32(eocdOffset + 16, true);
+      
+      if(totalEntries > 10000) throw new Error('Too many entries (>10,000). Possible ZIP bomb.');
+      if(cdOffset > f.size) throw new Error('Invalid Central Directory offset.');
+      
+      // Read Central Directory
+      // For simplicity in triage, we read the rest of the file from cdOffset
+      const cdSlice = f.slice(cdOffset, f.size - chunkSize + eocdOffset);
+      const cdBytes = await readFile(cdSlice);
+      const cdView = new DataView(cdBytes.buffer);
+      
+      let offset = 0;
+      const methods = {0:'Store', 8:'Deflate', 9:'Deflate64', 12:'BZIP2', 14:'LZMA'};
+      const dec = new TextDecoder();
+      
+      for(let i=0; i<totalEntries; i++) {
+        if(offset + 46 > cdBytes.length) break;
+        if(cdView.getUint32(offset, true) !== 0x02014B50) throw new Error('Invalid Central Directory Header signature');
+        
+        const method = cdView.getUint16(offset + 10, true);
+        const crc = cdView.getUint32(offset + 16, true);
+        const compSize = cdView.getUint32(offset + 20, true);
+        const uncompSize = cdView.getUint32(offset + 24, true);
+        const fnLen = cdView.getUint16(offset + 28, true);
+        const extLen = cdView.getUint16(offset + 30, true);
+        const comLen = cdView.getUint16(offset + 32, true);
+        
+        if(fnLen > 4096) throw new Error('Suspiciously long filename');
+        
+        const fnBytes = cdBytes.slice(offset + 46, offset + 46 + fnLen);
+        const filename = dec.decode(fnBytes);
+        
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid var(--border)';
+        
+        [filename, methods[method] || method, compSize, uncompSize, '0x'+crc.toString(16).padStart(8,'0').toUpperCase()].forEach(txt => {
+          const td = document.createElement('td');
+          td.style.padding = '.2rem';
+          td.textContent = txt;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+        
+        offset += 46 + fnLen + extLen + comLen;
+      }
+    } catch(e) { err.textContent = e.message; }
+  };
+</script></body></html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Packet Hex Decoder - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Packet Hex Decoder</h1>
+<p class="note">Parse Ethernet/IP/TCP/UDP from hex bytes</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('packet-decoder');
+  
+
+  const input = $('#input');
+  input.placeholder = "Paste raw hex packet bytes...\n(e.g. from Wireshark 'Copy as Hex Stream')";
+  const output = $('#output');
+  
+  $('#btn-process').onclick = () => {
+    $('#error').textContent = '';
+    const hex = input.value.replace(/[^0-9a-fA-F]/g, '');
+    if(!hex) return output.value = '';
+    
+    try {
+      const b = hexToBytes(hex);
+      let res = `Packet Length: ${b.length} bytes\n\n`;
+      let offset = 0;
+      
+      // Ethernet II
+      if(b.length >= 14) {
+        const dst = Array.from(b.slice(0,6)).map(x=>x.toString(16).padStart(2,'0')).join(':');
+        const src = Array.from(b.slice(6,12)).map(x=>x.toString(16).padStart(2,'0')).join(':');
+        const type = (b[12]<<8) | b[13];
+        res += `[ Ethernet II ]\nDestination MAC: ${dst}\nSource MAC:      ${src}\nType:            0x${type.toString(16).padStart(4,'0')}\n\n`;
+        offset = 14;
+        
+        // IPv4
+        if(type === 0x0800 && b.length >= offset + 20) {
+          const verIhl = b[offset];
+          const ihl = (verIhl & 0x0F) * 4;
+          const proto = b[offset+9];
+          const srcIp = `${b[offset+12]}.${b[offset+13]}.${b[offset+14]}.${b[offset+15]}`;
+          const dstIp = `${b[offset+16]}.${b[offset+17]}.${b[offset+18]}.${b[offset+19]}`;
+          res += `[ IPv4 ]\nSource IP:      ${srcIp}\nDestination IP: ${dstIp}\nProtocol:       ${proto === 6 ? 'TCP (6)' : proto === 17 ? 'UDP (17)' : proto === 1 ? 'ICMP (1)' : proto}\n\n`;
+          offset += ihl;
+          
+          // TCP
+          if(proto === 6 && b.length >= offset + 20) {
+            const srcPort = (b[offset]<<8) | b[offset+1];
+            const dstPort = (b[offset+2]<<8) | b[offset+3];
+            res += `[ TCP ]\nSource Port:      ${srcPort}\nDestination Port: ${dstPort}\n\n`;
+          }
+          // UDP
+          else if(proto === 17 && b.length >= offset + 8) {
+            const srcPort = (b[offset]<<8) | b[offset+1];
+            const dstPort = (b[offset+2]<<8) | b[offset+3];
+            res += `[ UDP ]\nSource Port:      ${srcPort}\nDestination Port: ${dstPort}\n\n`;
+          }
+        }
+      }
+      
+      output.value = res;
+    } catch(e) { $('#error').textContent = 'Invalid hex data'; }
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = ''; input.focus(); };
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

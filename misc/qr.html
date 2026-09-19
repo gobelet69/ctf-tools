@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>QR Code Decode - CTF Tools</title><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="../style.css"></head>
+<body><nav><a href="../index.html">&larr; Back to Tools</a></nav><h1>QR Code Decode</h1><p class="note">Decode QR codes natively (if supported)</p>
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label>Select QR Image to Decode</label>
+    <input type="file" id="file" accept="image/*" style="margin-bottom:1rem">
+    <div id="compat" style="color:var(--dim); font-size:0.85rem; padding:0.5rem; background:var(--surface); border:1px solid var(--border); border-radius:4px; display:none"></div>
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label>Decoded Result</label>
+    <textarea id="output" rows="6" readonly></textarea>
+    <div class="toolbar"><button id="btn-copy">Copy</button></div>
+  </div>
+</div>
+
+<script src="../js/common.js"></script><script>trackUsage('qr-code');
+
+  const fileIn = $('#file');
+  const output = $('#output');
+  const err = $('#error');
+  const compat = $('#compat');
+  
+  if (!('BarcodeDetector' in window)) {
+    compat.style.display = 'block';
+    compat.textContent = '⚠️ Your browser does not support the native HTML5 BarcodeDetector API. QR decoding is unavailable. (Try Chrome or Edge).';
+    fileIn.disabled = true;
+  }
+  
+  fileIn.onchange = async () => {
+    err.textContent = '';
+    const f = fileIn.files[0];
+    if(!f) return;
+    
+    try {
+      const url = URL.createObjectURL(f);
+      const img = new Image();
+      img.onload = async () => {
+        URL.revokeObjectURL(url);
+        try {
+          const detector = new BarcodeDetector({ formats: ['qr_code'] });
+          const barcodes = await detector.detect(img);
+          if (barcodes.length === 0) {
+            output.value = 'No QR code detected in this image.';
+          } else {
+            output.value = barcodes.map(b => b.rawValue).join('\n\n---\n\n');
+          }
+        } catch(e) {
+          err.textContent = 'BarcodeDetector failed: ' + e.message;
+        }
+      };
+      img.onerror = () => err.textContent = 'Invalid image file';
+      img.src = url;
+    } catch(e) { err.textContent = e.message; }
+  };
+  addCopyButton($('#btn-copy'), () => output.value);
+</script></body></html>

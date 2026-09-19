@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Morse Code - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Morse Code</h1>
+<p class="note">Encode and decode Morse code</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('morse');
+  
+
+  const morseMap = {
+    'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','G':'--.','H':'....','I':'..','J':'.---','K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.','Q':'--.-','R':'.-.','S':'...','T':'-','U':'..-','V':'...-','W':'.--','X':'-..-','Y':'-.--','Z':'--..',
+    '1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.','0':'-----',
+    ' ':'/'
+  };
+  const revMap = {}; for(let k in morseMap) revMap[morseMap[k]] = k;
+  
+  const tb = $$('.toolbar')[0];
+  tb.innerHTML = '';
+  const encBtn = makeEl('button', {class: 'primary'}, 'Encode');
+  const decBtn = makeEl('button', {}, 'Decode');
+  tb.appendChild(encBtn); tb.appendChild(decBtn);
+  
+  encBtn.onclick = () => {
+    $('#output').value = $('#input').value.toUpperCase().split('').map(c => morseMap[c]||'').filter(Boolean).join(' ');
+  };
+  decBtn.onclick = () => {
+    $('#output').value = $('#input').value.trim().split(/\s+/).map(p => revMap[p]||'').join('');
+  };
+  $('#btn-swap').onclick = () => { if($('#output').value) { $('#input').value = $('#output').value; $('#output').value = ''; } };
+  addCopyButton($('#btn-copy'), () => $('#output').value);
+
+</script>
+</body>
+</html>

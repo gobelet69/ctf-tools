@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Modular Arithmetic - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Modular Arithmetic</h1>
+<p class="note">Add, subtract, multiply, power, inverse mod n</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('modular');
+  
+
+  const input = $('#input');
+  input.placeholder = "Example:\n10 + 5 mod 7\n3 ^ 5 mod 13\ninv 5 mod 11";
+  const output = $('#output');
+  const err = $('#error');
+  
+  $('#btn-process').onclick = () => {
+    err.textContent = '';
+    try {
+      const lines = input.value.trim().split('\n');
+      output.value = lines.map(line => {
+        if(!line) return '';
+        const m = line.match(/^(\d+)\s*([+\-*^])\s*(\d+)\s*mod\s*(\d+)$/i);
+        if(m) {
+          const a = BigInt(m[1]), op = m[2], b = BigInt(m[3]), n = BigInt(m[4]);
+          if(op==='+') return ((a+b)%n).toString();
+          if(op==='-') return (((a-b)%n + n)%n).toString();
+          if(op==='*') return ((a*b)%n).toString();
+          if(op==='^') return modPow(a, b, n).toString();
+        }
+        const invMatch = line.match(/^inv\s+(\d+)\s*mod\s*(\d+)$/i);
+        if(invMatch) return modInverse(invMatch[1], invMatch[2]).toString();
+        return 'Parse Error';
+      }).join('\n');
+    } catch(e) { err.textContent = e.message; }
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = err.textContent = ''; input.focus(); };
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

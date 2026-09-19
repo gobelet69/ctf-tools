@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Base85 / ASCII85 - CTF Tools</title><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="../style.css"></head>
+<body><nav><a href="../index.html">&larr; Back to Tools</a></nav><h1>Base85 / ASCII85</h1><p class="note">Encode/decode ASCII85</p>
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    <div class="toolbar"><button id="btn-process" class="primary">Process</button><button id="btn-clear">Clear</button></div>
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    <div class="toolbar"><button id="btn-copy">Copy</button><button id="btn-swap">Output &rarr; Input</button></div>
+  </div>
+</div>
+<script src="../js/common.js"></script><script>trackUsage('base85');
+
+  // minimal ascii85 implementation for CTF triage
+  function a85enc(str) {
+    let b = textToBytes(str);
+    let res = '<~';
+    let pad = 0;
+    while(b.length % 4 !== 0) { b = new Uint8Array([...b, 0]); pad++; }
+    for(let i=0; i<b.length; i+=4) {
+      let v = (b[i]<<24) | (b[i+1]<<16) | (b[i+2]<<8) | b[i+3];
+      if(v === 0) res += 'z';
+      else {
+        let chunk = '';
+        for(let j=0; j<5; j++) { chunk = String.fromCharCode((v % 85) + 33) + chunk; v = Math.floor(v/85); }
+        res += chunk;
+      }
+    }
+    if(pad > 0) res = res.substring(0, res.length - pad);
+    return res + '~>';
+  }
+  
+  const tb = $$('.toolbar')[0];
+  tb.innerHTML = '<button id="btn-enc" class="primary">Encode</button> <button id="btn-clear">Clear</button>';
+  $('#btn-enc').onclick = () => { $('#output').value = a85enc($('#input').value); };
+  $('#btn-clear').onclick = () => $('#input').value = $('#output').value = '';
+  $('#btn-swap').onclick = () => { if($('#output').value) { $('#input').value = $('#output').value; $('#output').value = ''; } };
+  addCopyButton($('#btn-copy'), () => $('#output').value);
+</script></body></html>

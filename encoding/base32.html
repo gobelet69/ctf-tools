@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Base32 Encode / Decode - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Base32 Encode / Decode</h1>
+<p class="note">Encode and decode Base32</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('base32');
+  
+
+  const b32chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  
+  function b32enc(bytes) {
+    let bits = 0, val = 0, res = '';
+    for(let i=0; i<bytes.length; i++) {
+      val = (val << 8) | bytes[i];
+      bits += 8;
+      while(bits >= 5) {
+        res += b32chars[(val >>> (bits - 5)) & 31];
+        bits -= 5;
+      }
+    }
+    if(bits > 0) res += b32chars[(val << (5 - bits)) & 31];
+    while(res.length % 8 !== 0) res += '=';
+    return res;
+  }
+  
+  function b32dec(str) {
+    str = str.replace(/=/g, '').toUpperCase();
+    let bits = 0, val = 0, res = [];
+    for(let i=0; i<str.length; i++) {
+      const p = b32chars.indexOf(str[i]);
+      if(p === -1) throw new Error('Invalid Base32 char');
+      val = (val << 5) | p;
+      bits += 5;
+      if(bits >= 8) {
+        res.push((val >>> (bits - 8)) & 255);
+        bits -= 8;
+      }
+    }
+    return new Uint8Array(res);
+  }
+
+  const tb = $$('.toolbar')[0];
+  tb.innerHTML = '';
+  const encBtn = makeEl('button', {class: 'primary'}, 'Encode');
+  const decBtn = makeEl('button', {}, 'Decode');
+  tb.appendChild(encBtn); tb.appendChild(decBtn);
+  
+  encBtn.onclick = () => $('#output').value = b32enc(textToBytes($('#input').value));
+  decBtn.onclick = () => {
+    try {
+      const b = b32dec($('#input').value);
+      try { $('#output').value = bytesToText(b); } catch { $('#output').value = bytesToAscii(b); }
+      $('#error').textContent = '';
+    } catch(e) { $('#error').textContent = e.message; }
+  };
+  $('#btn-swap').onclick = () => { if($('#output').value) { $('#input').value = $('#output').value; $('#output').value = ''; } };
+  addCopyButton($('#btn-copy'), () => $('#output').value);
+
+</script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Scratchpad - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Scratchpad</h1>
+<p class="note">Local offline notes (saved automatically)</p>
+
+
+<div style="margin-top: 1rem;">
+  <textarea id="scratch" rows="20" placeholder="Type your local notes here... Anything typed is automatically saved to your browser's localStorage."></textarea>
+  <div class="toolbar" style="margin-top:1rem">
+    <button id="btn-copy">Copy All</button>
+    <button id="btn-clear" style="color:var(--red)">Clear Scratchpad</button>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('scratchpad');
+  
+
+  const scratch = $('#scratch');
+  scratch.value = localStorage.getItem('ctf_scratchpad') || '';
+  
+  scratch.addEventListener('input', debounce(() => {
+    localStorage.setItem('ctf_scratchpad', scratch.value);
+  }, 500));
+  
+  $('#btn-clear').onclick = () => {
+    if(confirm('Clear all local notes?')) {
+      scratch.value = '';
+      localStorage.removeItem('ctf_scratchpad');
+    }
+  };
+  addCopyButton($('#btn-copy'), () => scratch.value);
+
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>File Metadata - CTF Tools</title><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="../style.css"></head>
+<body><nav><a href="../index.html">&larr; Back to Tools</a></nav><h1>File Metadata</h1><p class="note">Display basic file metadata</p>
+
+<div class="grid" style="margin-top: 1rem;">
+  <div class="card">
+    <label>Select File</label>
+    <input type="file" id="file" />
+  </div>
+  <div>
+    <label>File Metadata</label>
+    <textarea id="output" rows="8" readonly></textarea>
+  </div>
+</div>
+
+<script src="../js/common.js"></script><script>trackUsage('file-meta');
+
+  $('#file').onchange = () => {
+    const f = $('#file').files[0];
+    if(!f) return;
+    $('#output').value = `Name:          ${f.name}\nSize:          ${f.size} bytes\nType (MIME):   ${f.type || 'Unknown'}\nLast Modified: ${new Date(f.lastModified).toString()}`;
+  };
+</script></body></html>

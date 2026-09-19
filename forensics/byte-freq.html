@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Byte Frequency Histogram - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Byte Frequency Histogram</h1>
+<p class="note">Display byte value distribution</p>
+
+
+<div class="grid" style="margin-top: 1rem;">
+  <div class="card">
+    <label>Select File</label>
+    <input type="file" id="file" />
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label>Byte Frequency</label>
+    <textarea id="output" rows="12" readonly></textarea>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('byte-freq');
+  
+
+  const fileIn = $('#file');
+  const output = $('#output');
+  
+  fileIn.onchange = async () => {
+    const f = fileIn.files[0];
+    if(!f) return;
+    try {
+      const b = await readFile(f);
+      const freqs = new Array(256).fill(0);
+      for(let i=0; i<b.length; i++) freqs[b[i]]++;
+      
+      let res = `File: ${f.name} (${b.length} bytes)\n\nByte | Hex | ASCII | Count\n-----|-----|-------|-------\n`;
+      for(let i=0; i<256; i++) {
+        if(freqs[i] > 0) {
+          const hex = i.toString(16).padStart(2,'0').toUpperCase();
+          const asc = (i >= 32 && i <= 126) ? String.fromCharCode(i) : '.';
+          res += `${i.toString().padStart(4)} |  ${hex} |   ${asc}   | ${freqs[i]}\n`;
+        }
+      }
+      output.value = res;
+    } catch(e) { $('#error').textContent = 'Error'; }
+  };
+
+</script>
+</body>
+</html>

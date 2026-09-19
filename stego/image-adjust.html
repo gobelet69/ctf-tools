@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Image Adjustments - CTF Tools</title><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="../style.css"></head>
+<body><nav><a href="../index.html">&larr; Back to Tools</a></nav><h1>Image Adjustments</h1><p class="note">Grayscale, invert</p>
+
+<div class="grid" style="margin-top: 1rem;">
+  <div class="card">
+    <label>Select Image</label>
+    <input type="file" id="file" accept="image/*" />
+    <div id="controls" style="margin-top:1rem; display:none;">
+      <button id="btn-gray">Grayscale</button>
+      <button id="btn-inv">Invert</button>
+      <button id="btn-reset">Reset</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label>Result</label>
+    <div style="border:1px solid var(--border); overflow:auto; max-height:600px; background:var(--surface);">
+      <canvas id="canvas" style="display:block; margin:0 auto; max-width:100%;"></canvas>
+    </div>
+  </div>
+</div>
+
+<script src="../js/common.js"></script><script>trackUsage('image-adjust');
+
+  const fileIn = $('#file');
+  const canvas = $('#canvas');
+  const ctx = canvas.getContext('2d', {willReadFrequently:true});
+  let origData = null;
+  
+  fileIn.onchange = () => {
+    const f = fileIn.files[0];
+    if(!f) return;
+    const url = URL.createObjectURL(f);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      canvas.width = img.width; canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+      origData = ctx.getImageData(0,0,img.width,img.height);
+      $('#controls').style.display = 'block';
+    };
+    img.src = url;
+  };
+  
+  $('#btn-gray').onclick = () => {
+    if(!origData) return;
+    const out = ctx.createImageData(canvas.width, canvas.height);
+    for(let i=0; i<origData.data.length; i+=4) {
+      const g = 0.3*origData.data[i] + 0.59*origData.data[i+1] + 0.11*origData.data[i+2];
+      out.data[i]=g; out.data[i+1]=g; out.data[i+2]=g; out.data[i+3]=origData.data[i+3];
+    }
+    ctx.putImageData(out, 0, 0);
+  };
+  $('#btn-inv').onclick = () => {
+    if(!origData) return;
+    const out = ctx.createImageData(canvas.width, canvas.height);
+    for(let i=0; i<origData.data.length; i+=4) {
+      out.data[i]=255-origData.data[i]; out.data[i+1]=255-origData.data[i+1]; out.data[i+2]=255-origData.data[i+2]; out.data[i+3]=origData.data[i+3];
+    }
+    ctx.putImageData(out, 0, 0);
+  };
+  $('#btn-reset').onclick = () => { if(origData) ctx.putImageData(origData, 0, 0); };
+</script></body></html>

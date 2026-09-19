@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>PCAP Triage Viewer - CTF Tools</title><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="../style.css"></head>
+<body><nav><a href="../index.html">&larr; Back to Tools</a></nav><h1>PCAP Triage Viewer</h1><p class="note">Lightweight parser for classic PCAP files</p>
+
+<div class="grid" style="margin-top: 1rem;">
+  <div class="card">
+    <label>Select .pcap File</label>
+    <input type="file" id="file" accept=".pcap" />
+    <p class="note" style="margin-top:.5rem">Classic PCAP only. PCAPNG is unsupported.</p>
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label>Global Header</label>
+    <div id="global-hdr" class="output" style="margin-bottom:1rem; min-height:2rem"></div>
+    
+    <label>Packet Triage</label>
+    <div style="overflow-x:auto">
+      <table id="pkt-table" style="font-family:var(--mono); font-size:0.8rem; width:100%; text-align:left; border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border)">
+            <th style="padding:.2rem">#</th>
+            <th style="padding:.2rem">Time</th>
+            <th style="padding:.2rem">Source</th>
+            <th style="padding:.2rem">Destination</th>
+            <th style="padding:.2rem">Protocol</th>
+            <th style="padding:.2rem">Length</th>
+          </tr>
+        </thead>
+        <tbody id="pkt-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="../js/common.js"></script><script>trackUsage('pcap-viewer');
+
+  const fileIn = $('#file');
+  const err = $('#error');
+  const gHdr = $('#global-hdr');
+  const tbody = $('#pkt-body');
+  
+  function num2ip(n) { return `${(n>>>24)&255}.${(n>>>16)&255}.${(n>>>8)&255}.${n&255}`; }
+  
+  fileIn.onchange = async () => {
+    err.textContent = ''; gHdr.textContent = ''; tbody.innerHTML = '';
+    const f = fileIn.files[0];
+    if(!f) return;
+    
+    if(f.size > 50000000) { err.textContent = 'File too large for browser triage (>50MB).'; return; }
+    
+    try {
+      const b = await readFile(f);
+      if(b.length < 24) throw new Error('File too small to be PCAP');
+      const view = new DataView(b.buffer);
+      
+      const magic = view.getUint32(0, false); // Try big endian first
+      let le = false;
+      if(magic === 0xA1B2C3D4) le = false;
+      else if(magic === 0xD4C3B2A1) le = true;
+      else throw new Error('Invalid PCAP magic number (PCAPNG is not supported)');
+      
+      const vMaj = view.getUint16(4, le);
+      const vMin = view.getUint16(6, le);
+      const snaplen = view.getUint32(16, le);
+      const linktype = view.getUint32(20, le);
+      
+      gHdr.textContent = `Version: ${vMaj}.${vMin} | Snaplen: ${snaplen} | Link Type: ${linktype === 1 ? 'Ethernet (1)' : linktype}`;
+      
+      let offset = 24;
+      let count = 0;
+      const MAX_PACKETS = 5000; // safety limit
+      
+      while(offset + 16 <= b.length && count < MAX_PACKETS) {
+        count++;
+        const ts_sec = view.getUint32(offset, le);
+        const incl_len = view.getUint32(offset+8, le);
+        const orig_len = view.getUint32(offset+12, le);
+        offset += 16;
+        
+        if(offset + incl_len > b.length) break;
+        
+        let src = '?', dst = '?', proto = '?', pLen = orig_len;
+        
+        // Very basic Ethernet -> IP -> TCP/UDP parsing
+        if(linktype === 1 && incl_len >= 14) {
+          const ethType = view.getUint16(offset+12, false); // Network byte order (BE)
+          if(ethType === 0x0800 && incl_len >= 34) { // IPv4
+            const ihl = (view.getUint8(offset+14) & 0x0F) * 4;
+            const protocol = view.getUint8(offset+23);
+            src = num2ip(view.getUint32(offset+26, false));
+            dst = num2ip(view.getUint32(offset+30, false));
+            
+            const pOff = offset + 14 + ihl;
+            if(protocol === 6 && pOff + 4 <= offset + incl_len) {
+              proto = 'TCP';
+              const sp = view.getUint16(pOff, false);
+              const dp = view.getUint16(pOff+2, false);
+              src += ':' + sp; dst += ':' + dp;
+            } else if(protocol === 17 && pOff + 4 <= offset + incl_len) {
+              proto = 'UDP';
+              const sp = view.getUint16(pOff, false);
+              const dp = view.getUint16(pOff+2, false);
+              src += ':' + sp; dst += ':' + dp;
+            } else if(protocol === 1) proto = 'ICMP';
+            else proto = `IPv4 (${protocol})`;
+          } else {
+            proto = `Eth (0x${ethType.toString(16)})`;
+          }
+        }
+        
+        const tr = document.createElement('tr');
+        tr.style.borderBottom = '1px solid var(--border)';
+        const date = new Date(ts_sec * 1000);
+        const timeStr = `${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}:${date.getSeconds().toString().padStart(2,'0')}`;
+        
+        [count, timeStr, src, dst, proto, pLen].forEach(txt => {
+          const td = document.createElement('td');
+          td.style.padding = '.2rem';
+          td.textContent = txt;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+        
+        offset += incl_len;
+      }
+      if(count >= MAX_PACKETS) {
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 6; td.textContent = '... Truncated at ' + MAX_PACKETS + ' packets';
+        tr.appendChild(td); tbody.appendChild(tr);
+      }
+    } catch(e) { err.textContent = e.message; }
+  };
+</script></body></html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Signed / Unsigned Converter - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Signed / Unsigned Converter</h1>
+<p class="note">Convert between twos complement representations</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('signed-unsigned');
+  
+
+  const input = $('#input');
+  const output = $('#output');
+  const tb = $$('.toolbar')[0];
+  tb.innerHTML = '<select id="bits"><option value="8">8-bit</option><option value="16">16-bit</option><option value="32" selected>32-bit</option></select> ';
+  tb.appendChild(makeEl('button', {class: 'primary', id: 'btn-process'}, 'Convert'));
+  
+  $('#btn-process').onclick = () => {
+    $('#error').textContent = '';
+    try {
+      const v = BigInt(input.value.trim());
+      const bits = parseInt($('#bits').value);
+      const mask = (1n << BigInt(bits)) - 1n;
+      const signBit = 1n << BigInt(bits - 1);
+      
+      let u, s;
+      if(v >= 0n && v <= mask) {
+        // assume it was unsigned, what is signed?
+        u = v;
+        s = (v & signBit) ? v - (1n << BigInt(bits)) : v;
+      } else if(v < 0n && v >= -(signBit)) {
+        // assume it was signed, what is unsigned?
+        s = v;
+        u = v & mask;
+      } else throw new Error('Out of bounds for chosen bit width');
+      
+      output.value = `Unsigned: ${u}\nSigned:   ${s}\nHex:      0x${u.toString(16).toUpperCase()}`;
+    } catch(e) { $('#error').textContent = 'Invalid input: ' + e.message; }
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = ''; };
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

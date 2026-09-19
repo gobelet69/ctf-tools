@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Regex Tester - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Regex Tester</h1>
+<p class="note">Test regular expressions</p>
+
+
+<div class="grid" style="margin-top: 1rem;">
+  <div>
+    <label>Pattern</label>
+    <input type="text" id="pattern" placeholder="e.g. flag{.*?}" style="margin-bottom:.5rem; font-family:var(--mono)">
+    <label>Flags</label>
+    <input type="text" id="flags" placeholder="g, i, m..." value="g" style="width:100px; margin-bottom:1rem; font-family:var(--mono)">
+  </div>
+  <div>
+    <label>Text</label>
+    <textarea id="input" rows="6" placeholder="Text to search"></textarea>
+    <div class="toolbar"><button id="btn-process" class="primary">Match</button></div>
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label>Matches</label>
+    <textarea id="output" rows="6" readonly></textarea>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('regex-tester');
+  
+
+  $('#btn-process').onclick = () => {
+    $('#error').textContent = '';
+    try {
+      const re = new RegExp($('#pattern').value, $('#flags').value);
+      const str = $('#input').value;
+      const matches = [...str.matchAll(re)];
+      if(matches.length === 0) $('#output').value = 'No matches';
+      else $('#output').value = matches.map((m,i) => `Match ${i+1}: ${m[0]}`).join('\n');
+    } catch(e) { $('#error').textContent = e.message; }
+  };
+
+</script>
+</body>
+</html>

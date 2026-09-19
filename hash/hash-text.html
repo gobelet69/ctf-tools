@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Hash Text - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+  <script src="../vendor/md5.min.js"></script>
+</head>
+<body>
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+<h1>Hash Text</h1>
+<p class="note">Calculate MD5, SHA-1, SHA-256, SHA-512</p>
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('hash-text');
+  
+  const input = $('#input');
+  const output = $('#output');
+  
+  $('#btn-process').onclick = async () => {
+    if(!input.value) { output.value = ''; return; }
+    let res = '';
+    
+    if (typeof md5 !== 'undefined') res += `MD5:    ${md5(input.value)}\n`;
+    
+    res += `SHA-1:  ${await hashBytes('SHA-1', input.value)}\n`;
+    res += `SHA-256:${await hashBytes('SHA-256', input.value)}\n`;
+    res += `SHA-384:${await hashBytes('SHA-384', input.value)}\n`;
+    res += `SHA-512:${await hashBytes('SHA-512', input.value)}\n`;
+    
+    output.value = res;
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = ''; input.focus(); };
+  addCopyButton($('#btn-copy'), () => output.value);
+</script>
+</body>
+</html>

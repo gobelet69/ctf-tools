@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ELF / PE Header Inspector - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>ELF / PE Header Inspector</h1>
+<p class="note">Quick triage of binary headers</p>
+
+
+<div class="grid" style="margin-top: 1rem;">
+  <div class="card">
+    <label>Select Executable File</label>
+    <input type="file" id="file" />
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label>Header Inspection</label>
+    <textarea id="output" rows="12" readonly></textarea>
+    <div class="toolbar"><button id="btn-copy">Copy</button></div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('elf-pe');
+  
+
+  const fileIn = $('#file');
+  const output = $('#output');
+  
+  fileIn.onchange = async () => {
+    $('#error').textContent = '';
+    const f = fileIn.files[0];
+    if(!f) return;
+    try {
+      // only read first 4KB for headers
+      const slice = f.slice(0, 4096);
+      const b = await readFile(slice);
+      const view = new DataView(b.buffer);
+      
+      // ELF: 7F 45 4C 46
+      if(b[0]===0x7F && b[1]===0x45 && b[2]===0x4C && b[3]===0x46) {
+        const is64 = b[4] === 2;
+        const isLE = b[5] === 1;
+        const eType = view.getUint16(16, isLE);
+        const eMachine = view.getUint16(18, isLE);
+        let ep = '';
+        if(is64) ep = view.getBigUint64(24, isLE).toString(16);
+        else ep = view.getUint32(24, isLE).toString(16);
+        
+        const types = {1:'Relocatable', 2:'Executable', 3:'Shared Object (PIE)', 4:'Core'};
+        const archs = {3:'x86', 62:'x86-64', 40:'ARM', 183:'AArch64'};
+        
+        output.value = `[ ELF Format ]\nClass:      ${is64 ? '64-bit' : '32-bit'}\nEndianness: ${isLE ? 'Little Endian' : 'Big Endian'}\nType:       ${types[eType] || eType}\nMachine:    ${archs[eMachine] || eMachine}\nEntry Pt:   0x${ep}`;
+        return;
+      }
+      
+      // PE (MZ)
+      if(b[0]===0x4D && b[1]===0x5A) {
+        const peOffset = view.getUint32(0x3C, true);
+        if(peOffset > b.length - 24) throw new Error('PE header out of bounds');
+        if(b[peOffset]===0x50 && b[peOffset+1]===0x45) { // PE\0\0
+          const machine = view.getUint16(peOffset+4, true);
+          const sections = view.getUint16(peOffset+6, true);
+          const archs = {0x014C: 'x86', 0x8664: 'x86-64', 0x0200: 'Itanium'};
+          
+          const optMagic = view.getUint16(peOffset+24, true);
+          const is64 = optMagic === 0x020B;
+          const ep = view.getUint32(peOffset+40, true).toString(16);
+          
+          output.value = `[ PE Format ]\nClass:      ${is64 ? 'PE32+ (64-bit)' : 'PE32 (32-bit)'}\nMachine:    ${archs[machine] || '0x'+machine.toString(16)}\nSections:   ${sections}\nEntry Pt:   0x${ep} (RVA)`;
+          return;
+        }
+      }
+      
+      output.value = 'Neither ELF nor PE recognized.';
+    } catch(e) { $('#error').textContent = 'Error parsing headers'; }
+  };
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

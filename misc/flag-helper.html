@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Flag Helper - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Flag Helper</h1>
+<p class="note">Extract CTF flags from text</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('flag-helper');
+  
+
+  const input = $('#input');
+  const output = $('#output');
+  
+  const tb = $$('.toolbar')[0];
+  tb.innerHTML = '<input type="text" id="prefix" value="flag,CTF" placeholder="Prefixes (comma sep)" style="width:200px"> ';
+  tb.appendChild(makeEl('button', {class:'primary', id:'btn-match'}, 'Extract'));
+  
+  $('#btn-match').onclick = () => {
+    const prefixes = $('#prefix').value.split(',').map(s=>s.trim()).filter(Boolean);
+    if(prefixes.length===0) return $('#output').value = '';
+    
+    const text = input.value;
+    let found = new Set();
+    
+    prefixes.forEach(p => {
+      // escape prefix for regex
+      const ep = p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // match prefix{...} non-greedy
+      const re = new RegExp(`${ep}\\{.*?\\}`, 'gi');
+      const matches = text.match(re);
+      if(matches) matches.forEach(m => found.add(m));
+    });
+    
+    output.value = found.size > 0 ? Array.from(found).join('\n') : 'No flags found matching given prefixes.';
+  };
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

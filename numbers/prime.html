@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Primality Tester - CTF Tools</title><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="../style.css"></head>
+<body><nav><a href="../index.html">&larr; Back to Tools</a></nav><h1>Primality Tester</h1><p class="note">Test if a number is prime</p>
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    <div class="toolbar"><button id="btn-process" class="primary">Process</button><button id="btn-clear">Clear</button></div>
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    <div class="toolbar"><button id="btn-copy">Copy</button><button id="btn-swap">Output &rarr; Input</button></div>
+  </div>
+</div>
+<script src="../js/common.js"></script><script>trackUsage('prime');
+
+  $('#btn-process').onclick = () => {
+    $('#error').textContent = '';
+    try {
+      const n = BigInt($('#input').value.trim());
+      if(n <= 1n) return $('#output').value = 'Not prime';
+      if(n === 2n || n === 3n) return $('#output').value = 'Prime';
+      if(n % 2n === 0n) return $('#output').value = 'Not prime (Divisible by 2)';
+      
+      // Simple trial division for triage (up to 1,000,000)
+      for(let i=3n; i*i<=n && i<1000000n; i+=2n) {
+        if(n % i === 0n) return $('#output').value = `Not prime (Divisible by ${i})`;
+      }
+      
+      if(n > 1000000000000n) $('#output').value = 'Likely prime (Trial division stopped at 1,000,000 to prevent hanging)';
+      else $('#output').value = 'Prime';
+    } catch(e) { $('#error').textContent = 'Invalid integer'; }
+  };
+  $('#btn-clear').onclick = () => { $('#input').value = $('#output').value = ''; };
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => $('#output').value);
+</script></body></html>

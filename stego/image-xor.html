@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Image XOR / Diff - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>Image XOR / Diff</h1>
+<p class="note">Pixel-perfect comparison between two images</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label>Image 1</label><input type="file" id="file1" style="margin-bottom:1rem">
+    <label>Image 2</label><input type="file" id="file2" style="margin-bottom:1rem">
+    <label>Operation</label>
+    <select id="op"><option value="xor">XOR</option><option value="diff">Absolute Difference</option></select>
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label>Result Viewer</label>
+    <div style="border:1px solid var(--border); border-radius:4px; overflow:auto; max-height:600px; background:var(--surface);">
+      <canvas id="canvas" style="display:block; margin:0 auto; max-width:100%;"></canvas>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('image-xor');
+  
+
+  const f1 = $('#file1'), f2 = $('#file2');
+  const canvas = $('#canvas');
+  const ctx = canvas.getContext('2d', {willReadFrequently:true});
+  let img1Data=null, img2Data=null;
+  
+  async function loadImg(f) {
+    return new Promise((res, rej) => {
+      const url = URL.createObjectURL(f);
+      const img = new Image();
+      img.onload = () => { URL.revokeObjectURL(url); res(img); };
+      img.onerror = rej;
+      img.src = url;
+    });
+  }
+  
+  async function process() {
+    if(!f1.files[0] || !f2.files[0]) return;
+    try {
+      const i1 = await loadImg(f1.files[0]);
+      const i2 = await loadImg(f2.files[0]);
+      canvas.width = Math.max(i1.width, i2.width);
+      canvas.height = Math.max(i1.height, i2.height);
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(i1, 0, 0); img1Data = ctx.getImageData(0,0,canvas.width,canvas.height);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(i2, 0, 0); img2Data = ctx.getImageData(0,0,canvas.width,canvas.height);
+      
+      const out = ctx.createImageData(canvas.width, canvas.height);
+      const op = $('#op').value;
+      
+      for(let i=0; i<out.data.length; i+=4) {
+        if(op === 'xor') {
+          out.data[i] = img1Data.data[i] ^ img2Data.data[i];
+          out.data[i+1] = img1Data.data[i+1] ^ img2Data.data[i+1];
+          out.data[i+2] = img1Data.data[i+2] ^ img2Data.data[i+2];
+        } else {
+          out.data[i] = Math.abs(img1Data.data[i] - img2Data.data[i]);
+          out.data[i+1] = Math.abs(img1Data.data[i+1] - img2Data.data[i+1]);
+          out.data[i+2] = Math.abs(img1Data.data[i+2] - img2Data.data[i+2]);
+        }
+        out.data[i+3] = 255;
+      }
+      ctx.putImageData(out, 0, 0);
+    } catch(e) { $('#error').textContent = 'Error loading images'; }
+  }
+  f1.onchange = process; f2.onchange = process; $('#op').onchange = process;
+
+</script>
+</body>
+</html>

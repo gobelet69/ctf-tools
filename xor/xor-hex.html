@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>XOR Hex Values - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>XOR Hex Values</h1>
+<p class="note">XOR two hex strings together</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('xor-hex');
+  
+
+  const input = $('#input');
+  input.placeholder = "Hex 1\nHex 2";
+  const output = $('#output');
+  const err = $('#error');
+  
+  $('#btn-process').onclick = () => {
+    err.textContent = '';
+    const lines = input.value.trim().split('\n').map(l => l.replace(/\s+/g, ''));
+    if(lines.length < 2) { err.textContent = 'Enter two hex strings on separate lines'; return; }
+    
+    try {
+      const b1 = hexToBytes(lines[0]);
+      const b2 = hexToBytes(lines[1]);
+      const len = Math.max(b1.length, b2.length);
+      const out = new Uint8Array(len);
+      for(let i=0; i<len; i++) {
+        const v1 = i < b1.length ? b1[i] : 0;
+        const v2 = i < b2.length ? b2[i] : 0;
+        out[i] = v1 ^ v2;
+      }
+      output.value = bytesToHex(out);
+    } catch(e) { err.textContent = e.message; }
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = err.textContent = ''; input.focus(); };
+  $('#btn-swap').onclick = () => { if(output.value) { input.value = output.value; output.value = err.textContent = ''; } };
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

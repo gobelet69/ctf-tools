@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>IPv6 Expand / Compress - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>IPv6 Expand / Compress</h1>
+<p class="note">Expand and compress IPv6 addresses</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('ipv6');
+  
+
+  const input = $('#input');
+  input.placeholder = "e.g., 2001:db8::1";
+  const output = $('#output');
+  
+  $('#btn-process').onclick = () => {
+    let v = input.value.trim();
+    if(!v) return;
+    try {
+      // Very naive IPV6 expansion/compression for CTF triage
+      // Expand
+      let exp = v;
+      if(exp.includes('::')) {
+        const parts = exp.split('::');
+        const p1 = parts[0] ? parts[0].split(':') : [];
+        const p2 = parts[1] ? parts[1].split(':') : [];
+        const missing = 8 - (p1.length + p2.length);
+        const zeroes = Array(missing).fill('0');
+        exp = [...p1, ...zeroes, ...p2].join(':');
+      }
+      const expanded = exp.split(':').map(p => p.padStart(4, '0')).join(':');
+      
+      // Compress
+      let comp = expanded.split(':').map(p => parseInt(p, 16).toString(16)).join(':');
+      comp = comp.replace(/(?:^|:)0(?::0)+(?::|$)/, '::'); // simplest regex compression
+      
+      output.value = `Expanded:\n${expanded}\n\nCompressed:\n${comp}`;
+    } catch(e) { $('#error').textContent = 'Invalid IPv6 format'; }
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = ''; input.focus(); };
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Punycode - CTF Tools</title><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="../style.css"></head>
+<body><nav><a href="../index.html">&larr; Back to Tools</a></nav><h1>Punycode</h1><p class="note">Encode/decode IDN domains</p>
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    <div class="toolbar"><button id="btn-process" class="primary">Process</button><button id="btn-clear">Clear</button></div>
+    <div id="error" class="error"></div>
+  </div>
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    <div class="toolbar"><button id="btn-copy">Copy</button><button id="btn-swap">Output &rarr; Input</button></div>
+  </div>
+</div>
+<script src="../js/common.js"></script><script>trackUsage('punycode');
+
+  // Punycode native APIs are not exposed, but we can do a very simple fake or just basic IDN using URL class if possible
+  // URL class auto-converts hostname to punycode!
+  const tb = $$('.toolbar')[0];
+  tb.innerHTML = '<button id="btn-enc" class="primary">Encode (IDN to Punycode)</button> <button id="btn-clear">Clear</button>';
+  $('#btn-enc').onclick = () => {
+    try {
+      const u = new URL('http://' + $('#input').value.trim());
+      $('#output').value = u.hostname;
+      $('#error').textContent = '';
+    } catch(e) { $('#error').textContent = 'Invalid domain'; }
+  };
+  $('#btn-clear').onclick = () => $('#input').value = $('#output').value = '';
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => $('#output').value);
+</script></body></html>

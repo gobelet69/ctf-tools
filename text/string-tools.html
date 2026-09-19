@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>String Tools - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>String Tools</h1>
+<p class="note">Reverse, sort, unique, uppercase, lowercase</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('string-tools');
+  
+
+  const input = $('#input');
+  const output = $('#output');
+  const tb = $$('.toolbar')[0];
+  tb.innerHTML = '<select id="op"><option value="upper">Uppercase</option><option value="lower">Lowercase</option><option value="sort">Sort Lines</option><option value="unique">Unique Lines</option><option value="revlines">Reverse Lines</option><option value="revchars">Reverse Characters</option></select> ';
+  tb.appendChild(makeEl('button', {class:'primary', id:'btn-proc'}, 'Process'));
+  
+  $('#btn-proc').onclick = () => {
+    const op = $('#op').value;
+    const text = input.value;
+    let lines = text.split('\n');
+    
+    if(op === 'upper') output.value = text.toUpperCase();
+    if(op === 'lower') output.value = text.toLowerCase();
+    if(op === 'sort') output.value = lines.sort().join('\n');
+    if(op === 'unique') output.value = [...new Set(lines)].join('\n');
+    if(op === 'revlines') output.value = lines.reverse().join('\n');
+    if(op === 'revchars') output.value = text.split('').reverse().join('');
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = ''; };
+  $('#btn-swap').onclick = () => { if(output.value) { input.value = output.value; output.value = ''; } };
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>

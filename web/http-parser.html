@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>HTTP Parser - CTF Tools</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<nav>
+  <a href="../index.html">&larr; Back to Tools</a>
+</nav>
+
+<h1>HTTP Parser</h1>
+<p class="note">Parse raw HTTP requests</p>
+
+
+<div class="grid grid-2" style="margin-top: 1rem;">
+  <div>
+    <label for="input">Input</label>
+    <textarea id="input" rows="8" placeholder="Enter input here..."></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-process" class="primary">Process</button>
+      <button id="btn-clear">Clear</button>
+    </div>
+    <div id="error" class="error"></div>
+  </div>
+  
+  <div>
+    <label for="output">Output</label>
+    <textarea id="output" rows="8" readonly></textarea>
+    
+    <div class="toolbar">
+      <button id="btn-copy">Copy</button>
+      <button id="btn-swap">Output &rarr; Input</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="../js/common.js"></script>
+<script>
+  trackUsage('http-parser');
+  
+
+  const input = $('#input');
+  input.placeholder = "GET / HTTP/1.1\nHost: example.com...";
+  const output = $('#output');
+  $('#btn-process').onclick = () => {
+    const lines = input.value.split('\n');
+    if(lines.length === 0) return;
+    
+    let res = `[ Request Line ]\n${lines[0]}\n\n[ Headers ]\n`;
+    let i = 1;
+    for(; i<lines.length; i++) {
+      if(!lines[i].trim()) break; // empty line separates headers and body
+      res += lines[i] + '\n';
+    }
+    
+    res += '\n[ Body ]\n';
+    for(i++; i<lines.length; i++) res += lines[i] + '\n';
+    
+    output.value = res;
+  };
+  $('#btn-clear').onclick = () => { input.value = output.value = ''; };
+  $('#btn-swap').style.display = 'none';
+  addCopyButton($('#btn-copy'), () => output.value);
+
+</script>
+</body>
+</html>
